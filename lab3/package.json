@@ -1,0 +1,19 @@
+{
+  "name": "webtech-205",
+  "version": "1.0.0",
+  "description": "Projet pour Technologies Web, à travailler et revoir tout le semestre.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/annabelle-lni/webtech-205.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/annabelle-lni/webtech-205/issues"
+  },
+  "homepage": "https://github.com/annabelle-lni/webtech-205#readme"
+}
