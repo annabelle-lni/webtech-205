@@ -1,0 +1,20 @@
+{
+  "name": "webtech-205",
+  "version": "1.0.0",
+  "description": "Charbonnier Pierre-Louis : pierrelouis.charbonnier@edu.ece.fr\r Leoni Annabelle : annabelle.leoni@edu.ece.fr",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/annabelle-lni/webtech-205.git"
+  },
+  "author": "pierrelouis",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/annabelle-lni/webtech-205/issues"
+  },
+  "homepage": "https://github.com/annabelle-lni/webtech-205#readme"
+}
