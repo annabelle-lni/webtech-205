@@ -57,11 +57,11 @@ http://localhost:3000
 ---
 
 ## 👥 Liste des contributeurs
-
-| Nom           | Rôle                  | Super-pouvoir                        |
-|---------------|-----------------------|--------------------------------------|
-| Pierre Louis  | ////////////////////  | //////////////////////////////       |
-| Annabelle     | /////////////         | ////////////////////                 |
+   
+| Prénom        | Nom          |  Mail                                | Rôle                                | Super pouvoirs     |
+|---------------|--------------|--------------------------------------|-------------------------------------|--------------------|
+| Pierre-Louis  | Charbonnier  | pierrelouis.charbonnier@edu.ece.fr   |  ////////////////////////////       |/////////////////   |
+| Annabelle     | Leoni        | annabelle.leoni@edu.ece.fr           |/////////////////////////////////////|///////////////     |
 
 
 ---
@@ -69,7 +69,8 @@ http://localhost:3000
 ## 📋 Progression du projet
 
 - [x] Initialisation du dépôt  
-- [ ] Création des pages HTML  
+- [x] Création de serveur HTTP
+- [x] Intégrer Nodemon  
 - [ ] Mise en place du design disco  
-- [ ] Intégration des fonctionnalités JavaScript  
-- [ ] Connexion à une API externe  
+- [ ] Refactoriser l'application précédente pour utiliser Express 
+- [ ] Créer une API   
