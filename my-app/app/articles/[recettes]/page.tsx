@@ -1,6 +1,6 @@
 import {use} from 'react';
 
-export default async function Recettes({
+export default function Recettes({
   params,
 }: {
   params: Promise<{ recettes: string }>
