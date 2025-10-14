@@ -1,4 +1,4 @@
-![Bannière](.wallpaperwebtech.png)
+![Bannière](wallpaperwebtech.png)
 
 # Web technologie — Équipe 205
 
