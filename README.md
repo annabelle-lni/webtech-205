@@ -1,3 +1,5 @@
+![Bannière](.wallpaperwebtech.png)
+
 # Web technologie — Équipe 205
 
 ![Status](https://img.shields.io/badge/status-en%20cours-yellow)
@@ -6,24 +8,23 @@
 
 ---
 
-## 🎉 Introduction
+## 🍿 Introduction
 
 Bienvenue dans le projet **Web technologie - Équipe 205** !  
-Ce dépôt regroupe notre travail collaboratif autour du développement web, avec une ambiance rétro, funky et technique.  
-Notre objectif : créer une application web stylée, fonctionnelle et bien documentée.
+Ce dépôt regroupe notre travail collaboratif autour du développement web de notre siteweb "COOKING.COM".  
+Notre objectif : créer un siteweb qui contiendrait un ensemble de recettes allant du salé 🍗 au sucré 🍪.
 
 ---
 
 ## 🧰 Prérequis
 
 
-| Outil            | Version recommandée | Description                        |
-|------------------|---------------------|------------------------------------|
-| Node.js          | ≥ 18.x              | Environnement JavaScript côté serveur |
-| npm              | ≥ 9.x               | Gestionnaire de paquets            |
-| Git              | ≥ 2.x               | Pour cloner et versionner le projet |
-| Navigateur web   | Chrome / Firefox    | Pour tester l’interface            |
-
+| Outil            | Version recommandée | Description                                                   |
+|------------------|---------------------|---------------------------------------------------------------|
+| React            | ≥ 19.1.0            | Pour créer des interfaces utilisateur dynamiques et réactives.|
+| Next             | ≥ 15.5.4            | Framework React pour créer des sites rapides et optimisés.    |
+| Git              | ≥ 2.x               | Pour cloner et versionner le projet.                          |
+| Navigateur web   | Chrome / Firefox    | Pour tester l’interface                                       |
 
 ---
 
@@ -42,7 +43,7 @@ npm install
 
 ---
 
-## 🕺 Instructions d’utilisation
+## 🥨 Instructions d’utilisation
 
 ```bash
 # Lance le serveur local
@@ -51,17 +52,17 @@ npm run dev
 
 Ensuite, ouvre ton navigateur à l’adresse suivante :
 ```
-http://localhost:3000
+http://localhost:3000 : la page d'accueil
 ```
 
 ---
 
 ## 👥 Liste des contributeurs
    
-| Prénom        | Nom          |  Mail                                | Rôle                                | Super pouvoirs     |
-|---------------|--------------|--------------------------------------|-------------------------------------|--------------------|
-| Pierre-Louis  | Charbonnier  | pierrelouis.charbonnier@edu.ece.fr   |  ////////////////////////////       |/////////////////   |
-| Annabelle     | Leoni        | annabelle.leoni@edu.ece.fr           |/////////////////////////////////////|///////////////     |
+| Prénom        | Nom          |  Mail                                | Profil GitHub                              |
+|---------------|--------------|--------------------------------------|--------------------------------------------|
+| Pierre-Louis  | Charbonnier  | pierrelouis.charbonnier@edu.ece.fr   | https://github.com/pierre-louis245         |
+| Annabelle     | Leoni        | annabelle.leoni@edu.ece.fr           | https://github.com/annabelle-lni           |
 
 
 ---
