@@ -10,24 +10,24 @@ export default function RootLayout({
   return(
     <html className="cooking-page">
       <body>
-      {/* Header */}
+      {/* Header */} {/* On met le header dans le layout comme ça il sera visible sur toutes les pages chargées */}
       <header className="header">
-        <div className="header-left">Cooking.com</div>
+        <Link href="/"><div className="header-left">Cooking.com</div></Link>
         <div className="header-center">
           <input type="text" placeholder="Search..." className="search-bar" />
           <button className="search-button">Search</button>
         </div>
-        <button className="login-button">Se connecter</button>
+        <Link href="/connexion"><button className="login-button">Se connecter</button></Link>
       </header>
-  {/*<nav>*/}
-   {/*  <Link href="/">Accueil</Link>*/}
-   {/*  <Link href="/about">About</Link>*/}
-   {/*  <Link href="/articles">Articles</Link>*/}
-   {/*  <Link href="/contacts">Contacts</Link>*/}
-  {/*</nav>*/}
-        </body>
-        <main>{children}</main>
+
+      {/* Footer */} {/* On met le footer dans le layout comme ça il sera visible sur toutes les pages chargées */}
+      <footer className="footer">Copyright © 2025 Cooking aka le meilleur site de nourriture du monde</footer>
+      
+      
+      <main>{children}</main>
+      </body>
     </html>
     
   );
 }
+    
