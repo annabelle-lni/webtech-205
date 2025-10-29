@@ -1,26 +1,165 @@
-@import "tailwindcss";
 
-:root {
-  --background: #171717;
-  --foreground: #ffffff;
+.cooking-page {
+  font-family: Aptos;
+  background-color: #f5f8fc;
+  color: #333;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 30px;
+  background-color: #fff;
+  border-bottom: 1px solid #dce3eb;
+  background-image: url("wallpaperwebtech.png");
+  background-size: 50%; /* couvrir toute la zone */
+  background-position: center;     /* centrer */
+  height: 100px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.header-left {
+  font-weight: bold;
+  font-size: 14px;
+  color: #333;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.header-center {
+  display: flex;
+  gap: 10px;
 }
+
+.search-bar {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  width: 250px;
+}
+
+.search-button,
+.login-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.search-button:hover,
+.login-button:hover {
+  background-color: #2563eb;
+}
+
+/* Main */
+.main-content {
+  flex: 1;
+  text-align: left;
+  margin: 40px 10%;
+  background-color: #FFFCEE;
+}
+
+.titre {
+  margin-top: 30px;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.subtitle {
+  color: #555;
+  padding: 20px;
+  width: 80%;
+  margin: 0 auto 50px auto;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.surlignage-blanc {
+  background-color: rgba(255, 255, 255, 0.7); /* blanc transparent */
+  display: inline;                            /* suit la largeur du texte */
+  padding: 0 2px;                             /* léger espace latéral */
+  border-radius: 2px;
+}
+
+
+/* Recipe Cards */
+.recipes {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+.recipe-card {
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 250px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.recipe-image {
+  height: 140px;
+  background: linear-gradient(135deg, #ccc, #999);
+}
+
+.recipe-content {
+  padding: 15px;
+}
+
+.recipe-content h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.recipe-content p {
+  font-size: 13px;
+  color: #555;
+}
+
+.recipe-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.recipe-link:hover {
+  text-decoration: underline;
+}
+
+/* Testimonial */
+.temoignage {
+  background-color: #fff;
+  padding: 20px;
+  border-left: 3px solid #3b82f6;
+  width: 80%;
+  margin: 0 auto 50px auto;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.testimonial em {
+  display: block;
+  margin-top: 5px;
+  font-size: 13px;
+  color: #666;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  font-size: 13px;
+  color: #777;
+  padding: 15px 0;
+  border-top: 1px solid #dce3eb;
+  background-color: #fff;
+}
+
