@@ -1,4 +1,4 @@
-
+/* Global Styles */
 .cooking-page {
   font-family: Aptos;
   background-color: #f5f8fc;
@@ -22,34 +22,45 @@
   height: 100px;
 }
 
-.header-left {
+/* Titre du site dans le header qui permet à ce que on puisse retourner au menu*/
+.header-left { 
   font-weight: bold;
-  font-size: 14px;
+  font-size: 20px;
   color: #333;
+  border: 2px solid black;
+  padding: 5px 10px;
+  border-radius: 5px;
+  background-color: #FFFCEE;
 }
+
 
 .header-center {
   display: flex;
   gap: 10px;
 }
 
-.search-bar {
-  padding: 6px 10px;
+/* Barres de recherche et de connexion */
+.search-bar, .connexion-form input, .creationcompte-form input {
+  padding: 0.7rem;
+  font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 3px;
-  width: 250px;
 }
 
+/* Boutons */
 .search-button,
-.login-button {
-  background-color: #3b82f6;
-  color: white;
+.login-button, .left-button, .right-button {
+  padding: 0.7rem 1.2rem;
+  background-color: #f4a887;
+  color: black;
   border: none;
   border-radius: 3px;
-  padding: 6px 12px;
+  font-size: 1rem;
   cursor: pointer;
 }
 
+
+/* lorsqu'on est au dessus du bouton recherche ou de connexion ca change de couleur en bleu */
 .search-button:hover,
 .login-button:hover {
   background-color: #2563eb;
@@ -61,39 +72,44 @@
   text-align: left;
   margin: 40px 10%;
   background-color: #FFFCEE;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding-bottom: 60px; 
 }
 
 .titre {
   margin-top: 30px;
+  padding-top: 30px;
   font-size: 22px;
   font-weight: bold;
+  margin: 0;
 }
 
 .subtitle {
   color: #555;
   padding: 20px;
   width: 80%;
-  margin: 0 auto 50px auto;
-  text-align: left;
-  font-size: 14px;
+  text-align: center;
   line-height: 1.6;
-}
-.surlignage-blanc {
-  background-color: rgba(255, 255, 255, 0.7); /* blanc transparent */
-  display: inline;                            /* suit la largeur du texte */
-  padding: 0 2px;                             /* léger espace latéral */
-  border-radius: 2px;
+  font-size: 1.1rem;
+  margin: 0 0 1rem 0;
+  font-style: italic;
 }
 
 
 /* Recipe Cards */
 .recipes {
+  padding-top: 30px;
   display: flex;
   justify-content: center;
   gap: 30px;
   margin-bottom: 40px;
 }
 
+/* carte de la recette */
 .recipe-card {
   background-color: #fff;
   border-radius: 5px;
@@ -122,35 +138,30 @@
   color: #555;
 }
 
+/* link de la recette */
 .recipe-link {
   display: inline-block;
   margin-top: 10px;
   font-size: 13px;
-  color: #3b82f6;
+  color: #f4a887;
   text-decoration: none;
 }
 
+/* lorsqu'on pointe la link de la recette ca souligne */
 .recipe-link:hover {
   text-decoration: underline;
 }
 
-/* Testimonial */
+/* temoignage */
 .temoignage {
   background-color: #fff;
   padding: 20px;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid #f4a887;
   width: 80%;
   margin: 0 auto 50px auto;
   text-align: left;
   font-size: 14px;
   line-height: 1.6;
-}
-
-.testimonial em {
-  display: block;
-  margin-top: 5px;
-  font-size: 13px;
-  color: #666;
 }
 
 /* Footer */
@@ -161,5 +172,24 @@
   padding: 15px 0;
   border-top: 1px solid #dce3eb;
   background-color: #fff;
+
+  position: fixed;  /* rend le footer fixe */
+  bottom: 0;        /* toujours en bas de l’écran */
+  width: 100%;     /* prend toute la largeur */
 }
+
+/* Formulaire */
+.connexion-form, .creationcompte-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 300px; /* largeur des inputs */
+}
+
+/* COnteneur nécessaire pour mettre les boutons left et right à coté tout en étant au milieu */
+.button-container {
+  display: flex;
+  justify-content: space-between;
+}
+
 

@@ -50,9 +50,6 @@ export default function Home() {
         <br></br>
 
       </main>
-
-      {/* Footer */}
-      <footer className="footer">Copyright © 2021 Company name</footer>
     </div>
   );
 }
