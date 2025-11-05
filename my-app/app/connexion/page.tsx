@@ -27,6 +27,5 @@ export default function connexion() {
       </main>
     </div>
     
-    
   );
 }

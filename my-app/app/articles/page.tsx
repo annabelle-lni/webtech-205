@@ -38,3 +38,7 @@ export default async function ArticlesPage() {
     </main>
   );
 }
+
+    //conseil du prof
+    //object subpabase puis on stock et apres on obtient une url de l'image pour l'envoyer dans la bdd
+    //https://supabase.com/docs/guides/storage
