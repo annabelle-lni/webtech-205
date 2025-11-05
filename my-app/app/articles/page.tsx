@@ -16,7 +16,7 @@ export default async function ArticlesPage() {
   }
 
   return (
-    <main className="main-content">
+    <main className="main-content" style ={{ marginTop: "130px" }}>
       <h1 className="titre">Nos recettes</h1>
       <div className="recipes">
         {recettes?.length > 0 ? (

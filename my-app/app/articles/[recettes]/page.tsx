@@ -21,7 +21,7 @@ export default async function RecettePage({ params }: { params: { recettes: stri
   }
 
   return (
-    <main className="main-content">
+    <main className="main-content" style ={{ marginTop: "130px" }}>
       <h1 className="titre">{data.nom}</h1>
 
       <section className="recipe-details">
