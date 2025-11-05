@@ -13,23 +13,30 @@ export default function RootLayout({
   const [open, setOpen] = useState(false); // état pour le menu déroulant
 
   return(
-    <html className="cooking-page">
+    <html className="cooking-page" >
       <body>
       {/* Header */} {/* On met le header dans le layout comme ça il sera visible sur toutes les pages chargées */}
-      <header className="header">
+      <header className="header"  style={{boxSizing: "border-box"}}>
         <div className="header-left"> {/* Header left : contient le ≡ (menu déroulant) + et lien qui renvoit sur le menu principal */} 
           <button className="menu-button" 
           onClick={() => setOpen(!open)}
-            >{open ? "X" :"≡"}</button>
+            >{open ? "x" :"≡"}</button>
           
-        <Link href="/">Cooking.com</Link>
+        <Link href="/" style={{marginRight : "10px", marginLeft : "10px", color : "black"}}>Cooking.com</Link>
         </div>
 
         <div className="header-center">
           <input type="text" placeholder="Search..." className="search-bar" />
           <button className="search-button">Search</button>
         </div>
-        <Link href="/connexion"><button className="login-button" style={{ right : '40px'}}>Se connecter</button></Link>
+
+        <div className="header-right">
+          <Link href="/notrehistoire" style={{marginRight : "10px", marginLeft : "10px", color : "black"}}>
+          Notre histoire</Link>
+
+          <Link href="/connexion"><button className="login-button">Se connecter</button></Link>
+        </div>  
+            
       </header>
 
       {/* Menu déroulant (en dessous du header) */}

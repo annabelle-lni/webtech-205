@@ -7,12 +7,10 @@ export default function Home() {
       {/* Section principale */}
       <main className="main-content" style ={{ marginTop: "130px" }}> {/* On décale le main pour pas qu'il soit caché par le header qui est maintenant fixé */}
         {/* Introduction */}
-        <h2 className="titre">Cooking, notre histoire :</h2>
-        <p className="subtitle">
-          Le plus beau site web que vous aurez vu. On accepte aucune critique
-          négative mais uniquement les critiques constructives et surtout
-          positives.
-        </p>
+        <h1>Bienvenue sur Cooking.com !</h1>
+        <p>Découvrez des recettes délicieuses et faciles à préparer pour toutes lesoccasions.
+        <p>Que vous soyez un chef expérimenté ou un débutant en cuisine,nous avons quelque chose pour vous.
+        </p></p>
       </main>
 
       <main className="main-content">
