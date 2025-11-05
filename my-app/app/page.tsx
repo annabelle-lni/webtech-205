@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <div className="Page accueil">
       {/* Section principale */}
-      <main className="main-content">
+      <main className="main-content" style ={{ marginTop: "130px" }}> {/* On décale le main pour pas qu'il soit caché par le header qui est maintenant fixé */}
         {/* Introduction */}
         <h2 className="titre">Cooking, notre histoire :</h2>
         <p className="subtitle">
@@ -51,5 +51,6 @@ export default function Home() {
 
       </main>
     </div>
+    
   );
 }

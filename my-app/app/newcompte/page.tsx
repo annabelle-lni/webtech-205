@@ -3,7 +3,7 @@ export default function creerCompte() {
 
     <div className="Page création compte">
     {/* Section principale */}
-      <main className="main-content">
+      <main className="main-content" style ={{ marginTop: "130px" }}> {/* On décale le main pour pas qu'il soit caché par le header qui est maintenant fixé */}
         {/* Introduction */}
 
         <h2 className="titre"><em><strong>Création de compte</strong></em></h2>

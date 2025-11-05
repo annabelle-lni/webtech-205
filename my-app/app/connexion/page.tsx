@@ -6,7 +6,7 @@ export default function connexion() {
 
     <div className="Page connexion">
     {/* Section principale */}
-      <main className="main-content">
+      <main className="main-content" style ={{ marginTop: "130px" }}> {/* On décale le main pour pas qu'il soit caché par le header qui est maintenant fixé */}
         {/* Connexion au compte */}
 
           <h2 className="titre"><em><strong>Se connecter</strong></em></h2>
