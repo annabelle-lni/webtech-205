@@ -62,7 +62,7 @@
 
 /* lorsqu'on est au dessus du bouton recherche ou de connexion ca change de couleur en bleu */
 .search-button:hover,
-.login-button:hover {
+.login-button:hover .menu-button:hover, .left-button:hover, .right-button:hover{
   background-color: #FFFCEE;
 }
 
@@ -103,11 +103,15 @@
 
 /* Recipe Cards */
 .recipes {
-  padding-top: 30px;
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-  margin-bottom: 40px;
+  margin: 20px auto; /* centré horizontalement */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); /* ajuste le nombre de colonnes en fonction de la taille de l'écran*/
+  gap: 16px;
+  align-items: start;
+  width: calc(100% - 80px);
+  max-width: 1100px; /* limite la largeur pour rester centré */
+  box-sizing: border-box;
+  justify-items: center; /* centre le contenu de chaque cellule */
 }
 
 /* carte de la recette */

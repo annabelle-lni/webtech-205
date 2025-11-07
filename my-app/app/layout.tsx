@@ -40,6 +40,7 @@ export default function RootLayout({
       </header>
 
       {/* Menu déroulant (en dessous du header) */}
+      {/* Creer les themes sur les recettes & relier*/}
         <nav className={`menu-deroulant ${open ? "open" : ""}`}>
           <div>
             <h3>Recettes par catégorie</h3>
@@ -61,6 +62,9 @@ export default function RootLayout({
             <p>Japonaises</p>
             <p>Indiennes</p>
             <p>Françaises</p>
+            <br></br>
+            <Link href="/articles" style={{marginRight : "10px", marginLeft : "10px", color : "black"}}><h4>Tout</h4></Link>
+
           </div>
         </nav>
 

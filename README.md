@@ -1,4 +1,4 @@
-![Bannière](../public/wallpaperwebtech.png)
+![Bannière](my-app/public/wallpaperwebtech.png)
 
 # Web technologie — Équipe 205
 
