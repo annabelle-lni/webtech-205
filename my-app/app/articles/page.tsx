@@ -16,15 +16,25 @@ export default async function ArticlesPage() {
   }
 
   return (
-    <main className="main-content" style ={{ marginTop: "130px" }}>
+    <main
+      className="main-content"
+      style={{ marginTop: "130px", overflow: "hidden", boxSizing: "border-box" }}
+    >
       <h1 className="titre">Nos recettes</h1>
-      <div className="recipes">
+      <div
+        className="recipes">
         {recettes?.length > 0 ? (
           recettes.map((recette) => (
-            <div key={recette.id} className="recipe-card">
-              <div className="recipe-content">
+            <div
+              key={recette.id}
+              className="recipe-card">
+              <div className="recipe-image" />
+              <div
+                className="recipe-content">
                 <h3>{recette.nom}</h3>
-                <p>Temps de préparation : {recette.temps_preparation} min</p>
+                <p>
+                  Temps de préparation : {recette.temps_preparation} min
+                </p>
                 <Link href={`/articles/${recette.id}`} className="recipe-link">
                   Voir la recette →
                 </Link>

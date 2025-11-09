@@ -6,6 +6,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  
 }
 
 /* Header */
@@ -14,7 +15,7 @@
   position : fixed;
   width: 100%;
   top: 0;
-  
+
   justify-content: space-between;
   align-items: center;
   padding: 10px 30px;
@@ -28,24 +29,15 @@
 }
 
 /* Titre du site dans le header qui permet à ce que on puisse retourner au menu*/
-.header-left { 
+.header-left, .header-right, .header-center { 
   font-weight: bold;
   font-size: 20px;
   color: #333;
-  border: 2px solid black;
   padding: 5px 10px;
   border-radius: 5px;
   background-color: #FFFCEE;
 }
 
-.header-center {
-  display: flex;
-  gap: 10px;
-}
-
-.header-right {
-  right: 40px;
-}
 
 /* Barres de recherche et de connexion */
 .search-bar, .connexion-form input, .creationcompte-form input {
@@ -57,7 +49,7 @@
 
 /* Boutons */
 .search-button,
-.login-button, .left-button, .right-button {
+.login-button, .left-button, .right-button, .menu-button {
   padding: 0.7rem 1.2rem;
   background-color: #f4a887;
   color: black;
@@ -70,7 +62,7 @@
 
 /* lorsqu'on est au dessus du bouton recherche ou de connexion ca change de couleur en bleu */
 .search-button:hover,
-.login-button:hover {
+.login-button:hover .menu-button:hover, .left-button:hover, .right-button:hover{
   background-color: #FFFCEE;
 }
 
@@ -111,11 +103,15 @@
 
 /* Recipe Cards */
 .recipes {
-  padding-top: 30px;
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-  margin-bottom: 40px;
+  margin: 20px auto; /* centré horizontalement */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); /* ajuste le nombre de colonnes en fonction de la taille de l'écran*/
+  gap: 16px;
+  align-items: start;
+  width: calc(100% - 80px);
+  max-width: 1100px; /* limite la largeur pour rester centré */
+  box-sizing: border-box;
+  justify-items: center; /* centre le contenu de chaque cellule */
 }
 
 /* carte de la recette */
