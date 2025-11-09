@@ -1,33 +1,33 @@
-import { supabase } from "@/supabase/client.js";
+import { supabase } from "@/supabase/client";
+import { notFound } from "next/navigation";
 
-export default async function RecettePage({ params }: { params: { recettes: string } }) {
-  const { recettes } = params; // correspond à l'id dans l'URL
+type PageProps = {
+  params: {
+    recettes: string;
+  };
+};
 
-  // On récupère la recette correspondante depuis Supabase
+export default async function RecettePage({ params }: any) {
+  const { recettes } = params;
+
   const { data, error } = await supabase
     .from("recette")
     .select("*")
     .eq("id", recettes)
     .single();
 
-  if (error) {
-    console.error("Erreur Supabase :", error.message);
-    return (
-      <main className="main-content">
-        <h1 className="titre">Recette introuvable 😢</h1>
-        <p>Impossible de trouver la recette avec l’id {recettes}.</p>
-      </main>
-    );
+  if (error || !data) {
+    console.error("Erreur Supabase :", error?.message);
+    return notFound(); // Utilise la page 404 de Next.js
   }
 
   return (
-    <main className="main-content" style ={{ marginTop: "130px" }}>
+    <main className="main-content" style={{ marginTop: "130px" }}>
       <h1 className="titre">{data.nom}</h1>
 
       <section className="recipe-details">
         <p>
-          <strong>Temps de préparation :</strong>{" "}
-          {data.temps_preparation} minutes
+          <strong>Temps de préparation :</strong> {data.temps_preparation} minutes
         </p>
 
         <h2>Ingrédients</h2>
