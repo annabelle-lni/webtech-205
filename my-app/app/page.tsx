@@ -23,7 +23,7 @@ export default async function Home() {
 
   if (error) {
     console.error("Erreur de récupération des recettes :", error.message);
-    return <p>Erreur lors du chargement des recettes 😢</p>;
+    return <p>Erreur lors du chargement des recettes </p>;
   }
 
   // On affiche aléatoirement 4 recettes
