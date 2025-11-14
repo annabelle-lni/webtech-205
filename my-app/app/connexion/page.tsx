@@ -1,31 +1,68 @@
-import Link from 'next/link';
+"use client";
 
+import { supabase } from "@/supabase/client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-export default function connexion() {
+export default function Connexion() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorMsg("");
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
+      return;
+    }
+
+    // Redirection après login
+    router.push("/");
+  }
+
   return (
-
     <div className="Page connexion">
-    {/* Section principale */}
-      <main className="main-content" style ={{ marginTop: "130px" }}> {/* On décale le main pour pas qu'il soit caché par le header qui est maintenant fixé */}
-        {/* Connexion au compte */}
+      <main className="main-content" style={{ marginTop: "130px" }}>
+        <h2 className="titre"><strong>Se connecter</strong></h2>
+        <p className="subtitle"><em>Heureux de vous revoir !</em></p>
 
-          <h2 className="titre"><em><strong>Se connecter</strong></em></h2>
-          <p className="subtitle"><em>Heureux de vous revoir !</em></p>
+        <form className="connexion-form" onSubmit={handleLogin}>
+          <input
+            type="email"
+            placeholder="Entrez votre mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-          <form className="connexion-form">
-            <input type="email" placeholder="Entrez votre mail" required />
-            <input type="password" placeholder="Entrez votre mot de passe" required />
+          <input
+            type="password"
+            placeholder="Entrez votre mot de passe"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
 
           <div className="button-container">
-            <Link href="/newcompte"><button type="button" className="left-button">Créer un compte</button></Link>
+            <Link href="/newcompte">
+              <button type="button" className="left-button">Créer un compte</button>
+            </Link>
 
             <button type="submit" className="right-button">Se connecter</button>
           </div>
-          </form>
-
-
+        </form>
       </main>
     </div>
-    
   );
 }
