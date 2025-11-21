@@ -16,6 +16,7 @@ export default function RootLayout({
     <html className="cooking-page" >
       <body>
       {/* Header */} {/* On met le header dans le layout comme ça il sera visible sur toutes les pages chargées */}
+      {/*faire des cas pour modifier l'image de fond de la banniere*/}
       <header className="header"  style={{boxSizing: "border-box"}}>
         <div className="header-left"> {/* Header left : contient le ≡ (menu déroulant) + et lien qui renvoit sur le menu principal */} 
           <button className="menu-button" 

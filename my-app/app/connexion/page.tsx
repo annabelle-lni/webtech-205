@@ -19,7 +19,9 @@ export default function connexion() {
           <div className="button-container">
             <Link href="/newcompte"><button type="button" className="left-button">Créer un compte</button></Link>
 
-            <button type="submit" className="right-button">Se connecter</button>
+            {/*<button type="submit" className="right-button">Se connecter</button>*/}
+            <Link href="/moncompte" style={{marginRight : "10px", marginLeft : "10px", color : "black"}}>
+            Se connecter</Link>
           </div>
           </form>
 
