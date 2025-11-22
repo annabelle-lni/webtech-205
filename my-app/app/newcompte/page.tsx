@@ -21,7 +21,6 @@ export default function CreerCompte() {
     setErrorMsg("");
     setSuccessMsg("");
 
-    //Création du compte dans Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -39,12 +38,11 @@ export default function CreerCompte() {
       return;
     }
 
-    setSuccessMsg("Compte créé ! Vérifiez vos emails.");
-    
-    // Redirection vers /connexion après 2 sec
+    setSuccessMsg("Compte créé avec succès !");
+
     setTimeout(() => {
       router.push("/connexion");
-    }, 2000);
+    }, 1500);
   }
 
   return (
