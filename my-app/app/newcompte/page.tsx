@@ -11,6 +11,9 @@ export default function CreerCompte() {
   const [password, setPassword] = useState("");
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
+  const [adresse, setAdresse] = useState("");
+  const [phone, setPhone] = useState("");
+  const [gender, setGender] = useState("");
 
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -20,7 +23,6 @@ export default function CreerCompte() {
     setErrorMsg("");
     setSuccessMsg("");
 
-    //Création du compte dans Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -28,6 +30,9 @@ export default function CreerCompte() {
         data: {
           prenom,
           nom,
+          adresse,
+          phone,
+          gender
         }
       }
     });
@@ -37,41 +42,46 @@ export default function CreerCompte() {
       return;
     }
 
-    setSuccessMsg("Compte créé ! Vérifiez vos emails.");
-    
-    // Redirection vers /connexion après 2 sec
+    setSuccessMsg("Compte créé avec succès !");
+
     setTimeout(() => {
       router.push("/connexion");
-    }, 2000);
+    }, 1500);
   }
 
   return (
     <div className="Page creation-compte">
       <main className="main-content" style={{ marginTop: "130px" }}>
-        <h2 className="titre">
-          <em><strong>Création de compte</strong></em>
-        </h2>
-        <p className="subtitle">
-          Heureux que vous rejoigniez la team cooking !  
-          <br />
-          <u>Veuillez remplir les informations suivantes</u> :
-        </p>
+        <h2 className="titre"><strong>Création de compte</strong></h2>
 
         <form className="creationcompte-form" onSubmit={handleSignup}>
 
-          <p style={{ textAlign: "left", margin: 0 }}>Prénom :</p>
+          <p>Prénom :</p>
           <input value={prenom} onChange={(e) => setPrenom(e.target.value)} required />
 
-          <p style={{ textAlign: "left", margin: 0 }}>Nom :</p>
+          <p>Nom :</p>
           <input value={nom} onChange={(e) => setNom(e.target.value)} required />
 
-          <p style={{ textAlign: "left", margin: 0 }}>Email :</p>
+          <p>Email :</p>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
 
-          <p style={{ textAlign: "left", margin: 0 }}>Mot de passe :</p>
+          <p>Mot de passe :</p>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
 
-          {/* Affichage des messages */}
+          <p>Adresse :</p>
+          <input value={adresse} onChange={(e) => setAdresse(e.target.value)} />
+
+          <p>Téléphone :</p>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+
+          <p>Genre :</p>
+          <select value={gender} onChange={(e) => setGender(e.target.value)}>
+            <option value="">—</option>
+            <option value="Homme">Homme</option>
+            <option value="Femme">Femme</option>
+            <option value="Autre">Autre</option>
+          </select>
+
           {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
           {successMsg && <p style={{ color: "green" }}>{successMsg}</p>}
 
