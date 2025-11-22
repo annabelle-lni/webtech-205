@@ -1,4 +1,4 @@
-"use client"; // nécéssaire pour utiliser des hooks comme useState
+"use client";
 
 import Link from "next/link";
 import "./globals.css";
@@ -10,73 +10,95 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }){
-  const [open, setOpen] = useState(false); // état pour le menu déroulant
+  const [open, setOpen] = useState(false);
 
   return(
-    <html className="cooking-page" >
-      <body>
-      {/* Header */} {/* On met le header dans le layout comme ça il sera visible sur toutes les pages chargées */}
-      <header className="header"  style={{boxSizing: "border-box"}}>
-        <div className="header-left"> {/* Header left : contient le ≡ (menu déroulant) + et lien qui renvoit sur le menu principal */} 
-          <button className="menu-button" 
-          onClick={() => setOpen(!open)}
-            >{open ? "x" :"≡"}</button>
-          
-        <Link href="/" style={{marginRight : "10px", marginLeft : "10px", color : "black"}}>Cooking.com</Link>
-        </div>
+    <html className="font-[Aptos] text-[#333] min-h-screen flex flex-col color-black" lang="en">
+      <body className="bg-[#f5f8fc] flex flex-col min-h-screen">
+        {/* Header */}
+        <header 
+          className="fixed w-full flex justify-between items-center px-[30px] py-[10px] bg-white border-b border-[#dce3eb] bg-[url('/banniere-patisserie.png')] bg-center bg-cover h-[100px] z-[2000]"
+          style={{boxSizing: "border-box"}}
+        >
+          {/* Header Left */}
+          <div className="text-[20px] text-[#333] px-[10px] py-[5px] rounded-[5px] bg-[#FFFCEE] flex items-center">
+            <button 
+              className="px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]"
+              onClick={() => setOpen(!open)}
+            >
+              {open ? "x" : "≡"}
+            </button>
+            <Link href="/" className="mx-[10px] font-bold italic">Cooking.com</Link>
+          </div>
 
-        <div className="header-center">
-          <input type="text" placeholder="Search..." className="search-bar" />
-          <button className="search-button">Search</button>
-        </div>
 
-        <div className="header-right">
-          <Link href="/notrehistoire" style={{marginRight : "10px", marginLeft : "10px", color : "black"}}>
-          Notre histoire</Link>
+          {/* Header Center */}
+          <div className="text-[20px] text-[#333] px-[10px] py-[5px] rounded-[5px] bg-[#FFFCEE]">
+            <input 
+              type="text" 
+              placeholder="Search..." 
+              className="px-[0.7rem] py-[0.7rem] text-base border border-[#ccc] rounded-[3px] mr-2"
+            />
+            <button className="px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]">
+              Search
+            </button>
+          </div>
 
-          <Link href="/connexion"><button className="login-button">Se connecter</button></Link>
-        </div>  
-            
-      </header>
+          {/* Header Right */}
+          <div className="text-[20px] text-[#333] px-[10px] py-[5px] rounded-[5px] bg-[#FFFCEE]">
+            <Link href="/notrehistoire" className="mx-[10px] font-bold italic">
+              Notre histoire
+            </Link>
+            <Link href="/connexion">
+              <button className="px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]">
+                Se connecter
+              </button>
+            </Link>
+          </div>  
+        </header>
 
-      {/* Menu déroulant (en dessous du header) */}
-      {/* Creer les themes sur les recettes & relier*/}
-        <nav className={`menu-deroulant ${open ? "open" : ""}`}>
+        {/* Menu déroulant */}
+        <nav className={`fixed left-0 w-full bg-[#fff3e0] shadow-[0_4px_10px_rgba(0,0,0,0.1)] py-[20px] flex justify-around transition-top duration-700 z-[999] ${
+          open ? "top-[100px]" : "top-[-50vh]"
+        }`}>
           <div>
-            <h3>Recettes par catégorie</h3>
-            <p>Apéro</p>
-            <p>Entrées</p>
-            <p>Plats</p>
-            <p>Desserts</p>
+            <h3 className="mb-2">Recettes par catégorie</h3>
+            <p className="cursor-pointer hover:text-[#f4a887]">Apéro</p>
+            <p className="cursor-pointer hover:text-[#f4a887]">Entrées</p>
+            <p className="cursor-pointer hover:text-[#f4a887]">Plats</p>
+            <p className="cursor-pointer hover:text-[#f4a887]">Desserts</p>
           </div>
           <div>
-            <h3>Recettes par fête</h3>
-            <p>Nouvel an</p>
-            <p>Noël</p>
-            <p>Pâques</p>
-            <p>Anniversaire</p>
+            <h3 className="mb-2">Recettes par fête</h3>
+            <p className="cursor-pointer hover:text-[#f4a887]">Nouvel an</p>
+            <p className="cursor-pointer hover:text-[#f4a887]">Noël</p>
+            <p className="cursor-pointer hover:text-[#f4a887]">Pâques</p>
+            <p className="cursor-pointer hover:text-[#f4a887]">Anniversaire</p>
           </div>
           <div>
-            <h3>Recettes du monde</h3>
-            <p>Italiennes</p>
-            <p>Japonaises</p>
-            <p>Indiennes</p>
-            <p>Françaises</p>
-            <br></br>
-            <Link href="/articles" style={{marginRight : "10px", marginLeft : "10px", color : "black"}}><h4>Tout</h4></Link>
-
+            <h3 className="mb-2">Recettes du monde</h3>
+            <p className="cursor-pointer hover:text-[#f4a887]">Italiennes</p>
+            <p className="cursor-pointer hover:text-[#f4a887]">Japonaises</p>
+            <p className="cursor-pointer hover:text-[#f4a887]">Indiennes</p>
+            <p className="cursor-pointer hover:text-[#f4a887]">Françaises</p>
+            <br />
+            <Link href="/articles" className="mx-[10px]">
+              <h4 className="hover:text-[#f4a887]">Tout</h4>
+            </Link>
           </div>
         </nav>
 
+        {/* Main Content */}
+        <main className="flex-1 mt-[100px] pb-[80px]">
+          {children}
+        </main>
 
-      {/* Footer */} {/* On met le footer dans le layout comme ça il sera visible sur toutes les pages chargées */}
-      <footer className="footer">Copyright © 2025 Cooking aka le meilleur site de nourriture du monde</footer>
-      
-      
-      <main>{children}</main>
+        {/* Footer */}
+        <footer className="text-center text-[13px] text-[#777] py-[15px] border-t border-[#dce3eb] bg-white relative z-[100] mt-auto">
+          Copyright © 2025 Cooking aka le meilleur site de nourriture du monde
+        </footer>
+        
       </body>
     </html>
-    
   );
 }
-    
