@@ -1,11 +1,15 @@
 "use client"; 
 import React, { useState, useEffect } from "react";
+import { createClient } from "@/supabase/client"; 
 
 export const dynamic = "force-dynamic";
 
 const AccountSettings = () => {
+  const supabase = createClient();
+  
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   
   // États pour les paramètres
   const [selectedTheme, setSelectedTheme] = useState('clair');
@@ -19,31 +23,54 @@ const AccountSettings = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({
     civility: '',
-    firstName: '',
-    lastName: '',
+    firstName: '', 
+    lastName: '',  
     email: '',
     password: ''
   });
 
-  // Simulation de la récupération des données utilisateur
+  // Récupération des données de supabase
   useEffect(() => {
     const fetchUserData = async () => {
       setIsLoading(true);
       try {
-        setTimeout(() => {
-          const user = {
-            civility: 'Monsieur',
-            firstName: 'Jean',
-            lastName: 'Dupont',
-            email: 'jean.dupont@email.com',
-            password: '••••••••'
-          };
-          setUserData(user);
-          setEditedData(user);
+        // On récupère l'utilisateur connecté
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          console.log("Utilisateur non connecté");
           setIsLoading(false);
-        }, 1000);
+          return;
+        }
+
+        setUserId(user.id);
+
+        // On récupère les infos du profil: le nom, prenom...
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('nom, prenom, civilite')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Erreur récupération profil:", profileError.message);
+        }
+
+        // Affichage des données d'un utilisateur
+        const userInfos = {
+          civility: profile?.civilite || '', 
+          firstName: profile?.prenom || '',
+          lastName: profile?.nom || '',
+          email: user.email || '', //email depuis users directement
+          password: '••••••••' 
+        };
+
+        setUserData(userInfos);
+        setEditedData(userInfos);
+        
       } catch (error) {
-        console.error("Erreur lors de la récupération des données:", error);
+        console.error("Erreur générale:", error);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -51,8 +78,59 @@ const AccountSettings = () => {
     fetchUserData();
   }, []);
 
+  // Sauvegarde des données
+  const handleSaveProfile = async () => {
+    if (!userId) return;
+
+    try {
+      // Update du profil d'un utilisateur: Nom, Prénom...
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          nom: editedData.lastName,
+          prenom: editedData.firstName,
+          civilite: editedData.civility
+        })
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+
+      // 2. Update des accès d'authentification: mail et mdp
+      const updates: { email?: string; password?: string } = {};
+      
+      if (editedData.email !== userData.email) {
+        updates.email = editedData.email;
+      }
+      
+      // On ne change le mot de passe que s'il n'est pas vide
+      if (editedData.password && editedData.password !== '••••••••') {
+        updates.password = editedData.password;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        const { error: authError } = await supabase.auth.updateUser(updates);
+        if (authError) throw authError;
+      }
+
+      console.log('Sauvegarde réussie');
+      
+      setUserData({ 
+        ...editedData, 
+        password: '••••••••' 
+      });
+      setEditedData(prev => ({ ...prev, password: '••••••••' }));
+      setIsEditing(false);
+      
+      alert('Profil mis à jour avec succès !');
+
+    } catch (error: any) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      alert(`Erreur : ${error.message || "Impossible de mettre à jour le profil"}`);
+    }
+  };
+
+  
   // Effet pour appliquer le thème
-  //totalement a MODIFIER sur toutes les pages pour que ca marche bien
   useEffect(() => {
     if (selectedTheme === 'sombre') {
       document.documentElement.classList.add('dark-theme');
@@ -72,41 +150,29 @@ const AccountSettings = () => {
 
   // Effet pour appliquer la bannière
   useEffect(() => {
-  const header = document.querySelector('header');
-  if (header) {
-    let bannerImage = '';
-    switch(selectedBanner) {
-      case 'International':
-        bannerImage = "url('/banniere-international.png')";
-        break;
-      case 'Plat':
-        bannerImage = "url('/banniere-plat.png')";
-        break;
-      case 'Pâtisserie':
-      default:
-        bannerImage = "url('/banniere-patisserie.png')";
-        break;
+    const header = document.querySelector('header');
+    if (header) {
+      let bannerImage = '';
+      switch(selectedBanner) {
+        case 'International':
+          bannerImage = "url('/banniere-international.png')";
+          break;
+        case 'Plat':
+          bannerImage = "url('/banniere-plat.png')";
+          break;
+        case 'Pâtisserie':
+        default:
+          bannerImage = "url('/banniere-patisserie.png')";
+          break;
+      }
+      header.style.backgroundImage = bannerImage;
     }
-    header.style.backgroundImage = bannerImage;
-  }
-}, [selectedBanner]);
+  }, [selectedBanner]);
 
 
   const handleExportData = () => {
     console.log(`Export des données en ${selectedExport}`);
     alert(`Export des données en ${selectedExport} initié`);
-  };
-
-  const handleSaveProfile = async () => {
-    try {
-      console.log('Sauvegarde des données:', editedData);
-      setUserData({ ...editedData });
-      setIsEditing(false);
-      alert('Profil mis à jour avec succès');
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la mise à jour du profil');
-    }
   };
 
   const handleCancelEdit = () => {
@@ -121,13 +187,14 @@ const AccountSettings = () => {
     }));
   };
 
+
   if (isLoading) {
     return (
       <div className="min-h-screen">
         <main className="flex-1 text-left mx-[10%] my-10 bg-[#FFFCEE] flex flex-col items-center text-center gap-2 pb-[60px] rounded-[20px] mt-32">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f4a887] mx-auto"></div>
-            <p className="mt-4 text-[#555]">Chargement des données...</p>
+            <p className="mt-4 text-[#555]">Chargement de votre profil...</p>
           </div>
         </main>
       </div>
@@ -211,7 +278,6 @@ const AccountSettings = () => {
                 </div>
               </div>
 
-              {/* Modifier la bannière */}
               {/* Modifier la bannière */}
               <div className="mb-5">
                 <h4 className="text-base font-bold text-[#555] mb-2">Modifier la bannière</h4>
@@ -400,7 +466,7 @@ const AccountSettings = () => {
                 {isEditing ? (
                   <input
                     type="password"
-                    value={editedData.password}
+                    value={editedData.password === '••••••••' ? '' : editedData.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
                     className="px-3 py-2 border-2 border-[#e2e8f0] rounded-[5px] text-base bg-white flex-1 max-w-[300px] focus:border-[#f4a887] focus:outline-none"
                     placeholder="Nouveau mot de passe"
