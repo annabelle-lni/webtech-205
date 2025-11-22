@@ -4,6 +4,7 @@ import Link from "next/link";
 import "./globals.css";
 import React from "react";
 import { useState } from "react";
+import { useRouter } from "next/navigation"; // Va permettre de faire la redirection
 
 export default function RootLayout({
   children,
@@ -11,6 +12,18 @@ export default function RootLayout({
   children: React.ReactNode
 }){
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter(); // Initialisation du router
+
+  // Fonction de recherche qui redirige vers la page articles
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Redirection vers /articles avec le paramètre de recherche
+      router.push(`/articles?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery(""); // Vide la barre de recherche
+    }
+  };
 
   return(
     <html className="font-[Aptos] text-[#333] min-h-screen flex flex-col color-black" lang="en">
@@ -34,14 +47,21 @@ export default function RootLayout({
 
           {/* Header Center */}
           <div className="text-[20px] text-[#333] px-[10px] py-[5px] rounded-[5px] bg-[#FFFCEE]">
-            <input 
-              type="text" 
-              placeholder="Search..." 
-              className="px-[0.7rem] py-[0.7rem] text-base border border-[#ccc] rounded-[3px] mr-2"
-            />
-            <button className="px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]">
-              Search
-            </button>
+            <form onSubmit={handleSearch} className="flex items-center">
+              <input 
+                type="text" 
+                placeholder="Rechercher une recette..." 
+                value={searchQuery} //valeur de searchQuery
+                onChange={(e) => setSearchQuery(e.target.value)} //va mettre à jour la valeur de searchQuery
+                className="px-[0.7rem] py-[0.7rem] text-base border border-[#ccc] rounded-[3px] mr-2"
+              />
+              <button 
+                type="submit"
+                className="px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]"
+              >
+                Rechercher
+              </button>
+            </form>
           </div>
 
           {/* Header Right */}
