@@ -1,7 +1,34 @@
-import Link from 'next/link';
+"use client";
 
+import { supabase } from "@/supabase/client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-export default function connexion() {
+export default function Connexion() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorMsg("");
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
+      return;
+    }
+
+    // Redirection après login
+    router.push("/");
+  }
+
   return (
     <div className=" my-[30px] min-h-screen">
       {/* Main content avec les mêmes styles que .main-content */}
@@ -64,11 +91,8 @@ export default function connexion() {
               Se connecter
             </Link>
           </div>
-          </form>
-
-
+        </form>
       </main>
     </div>
-    
   );
 }

@@ -161,7 +161,5 @@ export default function CreerCompte() {
         </form>
       </main>
     </div>
-    
-    
   );
 }

@@ -14,7 +14,6 @@ const AccountSettings = () => {
   const [selectedExport, setSelectedExport] = useState('JSON');
   const [deleteOption, setDeleteOption] = useState<string>('');
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
-
   
   // États pour l'édition des informations
   const [isEditing, setIsEditing] = useState(false);
