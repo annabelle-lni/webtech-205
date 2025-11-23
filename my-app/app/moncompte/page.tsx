@@ -1,18 +1,56 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/supabase/client";
-import Link from "next/link"; // AJOUT IMPORTANT
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
+
+// Types
+interface UserData {
+  civility: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+interface Recipe {
+  id: string;
+  nom: string;
+  temps_preparation: string;
+  categorie: string;
+  fete: string;
+  origine: string;
+  difficulte: string;
+  ingredient: string;
+  preparation: string;
+  images?: string;
+}
+
+interface SavedRecipe {
+  id: string;
+  created_at: string;
+  recette: Recipe;
+}
+
+interface Comment {
+  id: string;
+  contenu: string;
+  created_at: string;
+  recette: {
+    id: number; 
+    nom: string;
+  };
+}
 
 const AccountSettings = () => {
   const supabase = createClient();
 
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // États pour les paramètres
+  // États pour les paramètres avec valeurs par défaut
   const [selectedTheme, setSelectedTheme] = useState("clair");
   const [selectedFont, setSelectedFont] = useState("Aptos");
   const [selectedBanner, setSelectedBanner] = useState("Pâtisserie");
@@ -21,9 +59,9 @@ const AccountSettings = () => {
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   // États pour les données utilisateur
-  const [publishedRecipes, setPublishedRecipes] = useState<any[]>([]);
-  const [savedRecipes, setSavedRecipes] = useState<any[]>([]);
-  const [comments, setComments] = useState<any[]>([]);
+  const [publishedRecipes, setPublishedRecipes] = useState<Recipe[]>([]);
+  const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
 
   // États pour l'édition des informations
   const [isEditing, setIsEditing] = useState(false);
@@ -37,7 +75,7 @@ const AccountSettings = () => {
 
   // États pour la gestion des recettes
   const [showAddRecipeForm, setShowAddRecipeForm] = useState(false);
-  const [editingRecipe, setEditingRecipe] = useState<any>(null);
+  const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [newRecipe, setNewRecipe] = useState({
     nom: "",
     ingredient: "",
@@ -47,33 +85,187 @@ const AccountSettings = () => {
     fete: "",
     origine: "",
     difficulte: "faible",
-    image: null as File | null // Pour stocker le fichier avant upload
+    image: null as File | null
   });
 
-  // Classe boutons (utiliser le style fourni)
-  const primaryBtn =
-    "px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]";
-  const secondaryBtn =
-    "px-[1.2rem] py-[0.7rem] bg-[#6c757d] text-white border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
-  const dangerBtn =
-    "px-[1.2rem] py-[0.7rem] bg-[#ff6b6b] text-white border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
+  // Classe boutons
+  const primaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#e8976f] transition-colors";
+  const secondaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#6c757d] border-none rounded-[3px] text-base cursor-pointer hover:opacity-90 transition-colors";
+  const dangerBtn = "px-[1.2rem] py-[0.7rem] bg-[#ff6b6b] border-none rounded-[3px] text-base cursor-pointer hover:opacity-90 transition-colors";
+
+  // FONCTION POUR RÉINITIALISER LES PARAMÈTRES PAR DÉFAUT
+  const resetSettingsToDefault = useCallback(() => {
+    console.log("Réinitialisation des paramètres aux valeurs par défaut");
+    
+    setSelectedTheme("clair");
+    setSelectedFont("Aptos");
+    setSelectedBanner("Pâtisserie");
+    setSelectedExport("JSON");
+    
+    // Réappliquer les styles par défaut
+    document.documentElement.classList.remove("dark-theme");
+    document.body.style.backgroundColor = "#f5f8fc";
+    document.body.style.color = "#333";
+    document.body.style.fontFamily = "Aptos, sans-serif";
+    
+    // Réinitialiser la bannière
+    const header = document.querySelector("header");
+    if (header) {
+      header.style.backgroundImage = "url('/banniere-patisserie.png')";
+    }
+
+    // Nettoyer le localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('selectedTheme');
+      localStorage.removeItem('selectedFont');
+      localStorage.removeItem('selectedBanner');
+    }
+  }, []);
+
+  // FONCTION POUR SAUVEGARDER LES PARAMÈTRES DANS LA BDD
+  const saveSettingsToDatabase = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const settings = {
+        theme: selectedTheme,
+        font: selectedFont,
+        banner: selectedBanner,
+        export_format: selectedExport,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from("user_settings")
+        .upsert({
+          user_id: userId,
+          settings: settings
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) throw error;
+      
+      console.log("Paramètres sauvegardés dans la base de données");
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde des paramètres:", error);
+    }
+  }, [userId, selectedTheme, selectedFont, selectedBanner, selectedExport, supabase]);
+
+  // FONCTION POUR CHARGER LES PARAMÈTRES DEPUIS LA BDD
+  const loadSettingsFromDatabase = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("user_settings")
+        .select("settings")
+        .eq("user_id", userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error("Erreur récupération paramètres:", error);
+        return;
+      }
+
+      if (data && data.settings) {
+        const settings = data.settings;
+        
+        // Mettre à jour les états avec les paramètres de l'utilisateur
+        if (settings.theme) {
+          setSelectedTheme(settings.theme);
+        }
+        if (settings.font) {
+          setSelectedFont(settings.font);
+        }
+        if (settings.banner) {
+          setSelectedBanner(settings.banner);
+        }
+        if (settings.export_format) {
+          setSelectedExport(settings.export_format);
+        }
+        
+        console.log("Paramètres chargés depuis la base de données:", settings);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des paramètres:", error);
+    }
+  }, []);
+
+  // FONCTION POUR CHARGER LES RECETTES ENREGISTRÉES
+  const loadSavedRecipes = useCallback(async (userId: string) => {
+    try {
+      const { data: savedRecipesData, error: savedRecipesError } = await supabase
+        .from("recettes_sauvegardees")
+        .select(`
+          id,
+          created_at,
+          recette:recette_id(
+            id,
+            nom,
+            temps_preparation,
+            categorie,
+            fete,
+            origine,
+            difficulte,
+            images
+          )
+        `)
+        .eq("user_id", userId);
+
+      if (savedRecipesError) {
+        console.error("Erreur récupération recettes enregistrées:", savedRecipesError.message);
+        setSavedRecipes([]);
+      } else {
+        setSavedRecipes(savedRecipesData || []);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des recettes enregistrées:", error);
+    }
+  }, []);
+
+  // FONCTION POUR CHARGER LES COMMENTAIRES
+  const loadUserComments = useCallback(async (userId: string) => {
+    try {
+      const { data: userComments, error: commentsError } = await supabase
+        .from("commentaire")
+        .select(`
+          id, 
+          contenu, 
+          created_at, 
+          recette:recette_id(
+            id,
+            nom
+          )
+        `)
+        .eq("proprietaire_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (!commentsError && userComments) {
+        setComments(userComments);
+      } else {
+        console.error("Erreur récupération commentaires:", commentsError);
+        setComments([]);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des commentaires:", error);
+      setComments([]);
+    }
+  }, [supabase]);
 
   // FONCTION POUR UPLOADER L'IMAGE
-  const uploadRecipeImage = async (file: File) => {
+  const uploadRecipeImage = useCallback(async (file: File) => {
+    if (!userId) return null;
+
     try {
-      // Générer un nom de fichier unique
       const fileName = `recettes/${userId}/${Date.now()}-${file.name}`;
       
-      // Uploader l'image vers Supabase Storage (Bucket 'photos-recettes')
-      const { data, error } = await supabase.storage
-        .from('photos-recettes')
+      const { error } = await supabase.storage
+        .from('images')
         .upload(fileName, file);
 
       if (error) throw error;
 
-      // Récupérer l'URL publique
       const { data: { publicUrl } } = supabase.storage
-        .from('photos-recettes')
+        .from('images')
         .getPublicUrl(fileName);
 
       return publicUrl;
@@ -81,71 +273,194 @@ const AccountSettings = () => {
       console.error('Erreur upload image:', error);
       return null;
     }
-  };
+  }, [userId, supabase]);
 
-  // Récupération des données de supabase
-  useEffect(() => {
-    const fetchUserData = async () => {
-      setIsLoading(true);
-      try {
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser();
+  // FONCTION POUR CONVERTIR LES DONNÉES EN CSV
+  const convertToCSV = useCallback((data: any) => {
+    const sections = [];
+    
+    // Section Informations personnelles
+    sections.push("INFORMATIONS PERSONNELLES");
+    sections.push("Clé,Valeur");
+    Object.entries(data.informations_personnelles).forEach(([key, value]) => {
+      sections.push(`"${key}","${value}"`);
+    });
+    sections.push(""); // Ligne vide entre les sections
 
-        if (authError || !user) {
-          console.log("Utilisateur non connecté");
-          setIsLoading(false);
-          return;
-        }
+    // Section Commentaires
+    if (data.commentaires.length > 0) {
+      sections.push("COMMENTAIRES");
+      sections.push("ID,Contenu,Date de création,Recette associée");
+      data.commentaires.forEach((comment: any) => {
+        sections.push(`"${comment.id}","${comment.contenu.replace(/"/g, '""')}","${comment.date_creation}","${comment.recette_associee}"`);
+      });
+      sections.push("");
+    }
 
-        setUserId(user.id);
+    // Section Recettes publiées
+    if (data.recettes_publiées.length > 0) {
+      sections.push("RECETTES PUBLIÉES");
+      sections.push("ID,Nom,Temps de préparation,Catégorie,Fête,Origine,Difficulté,Ingrédients,Préparation");
+      data.recettes_publiées.forEach((recipe: any) => {
+        sections.push(`"${recipe.id}","${recipe.nom}","${recipe.temps_preparation}","${recipe.categorie}","${recipe.fete}","${recipe.origine}","${recipe.difficulte}","${recipe.ingredients.replace(/"/g, '""')}","${recipe.preparation.replace(/"/g, '""')}"`);
+      });
+      sections.push("");
+    }
 
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("nom, prenom, civilite")
-          .eq("id", user.id)
-          .maybeSingle();
+    // Section Recettes enregistrées
+    if (data.recettes_enregistrées.length > 0) {
+      sections.push("RECETTES ENREGISTRÉES");
+      sections.push("ID sauvegarde,Date de sauvegarde,ID recette,Nom recette,Temps de préparation,Catégorie,Fête,Origine,Difficulté");
+      data.recettes_enregistrées.forEach((saved: any) => {
+        sections.push(`"${saved.id}","${saved.date_sauvegarde}","${saved.recette.id}","${saved.recette.nom}","${saved.recette.temps_preparation}","${saved.recette.categorie}","${saved.recette.fete}","${saved.recette.origine}","${saved.recette.difficulte}"`);
+      });
+    }
 
-        if (profileError) {
-          console.error("Erreur récupération profil:", profileError.message);
-        }
-
-        const userInfos = {
-          civility: profile?.civilite || "",
-          firstName: profile?.prenom || "",
-          lastName: profile?.nom || "",
-          email: user.email || "",
-          password: "••••••••",
-        };
-
-        setUserData(userInfos);
-        setEditedData(userInfos);
-
-        // Charger les recettes publiées de l'utilisateur
-        await fetchUserRecipes(user.id);
-
-        // --- AJOUT : Charger les recettes SAUVEGARDÉES ---
-        await fetchSavedRecipes(user.id);
-
-        setComments([]); // Aucun commentaire
-
-      } catch (error) {
-        console.error("Erreur générale:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserData();
+    return sections.join("\n");
   }, []);
 
-  // Fonction pour récupérer les recettes de l'utilisateur (PUBLIÉES)
-  const fetchUserRecipes = async (userId: string) => {
+  // FONCTION POUR EXPORTER LES DONNÉES
+  const handleExportData = useCallback(async () => {
+    if (!userId) {
+      alert("Vous devez être connecté pour exporter vos données");
+      return;
+    }
+
+    try {
+      const exportData: {
+        informations_personnelles: any;
+        commentaires: any[];
+        recettes_publiées: any[];
+        recettes_enregistrées: any[];
+      } = {
+        informations_personnelles: {
+          civilité: userData?.civility || "",
+          prénom: userData?.firstName || "",
+          nom: userData?.lastName || "",
+          email: userData?.email || "",
+          date_export: new Date().toISOString()
+        },
+        commentaires: [],
+        recettes_publiées: [],
+        recettes_enregistrées: []
+      };
+
+      // Récupérer les commentaires de l'utilisateur
+      const { data: userComments, error: commentsError } = await supabase
+        .from("commentaire")
+        .select(`
+          id,
+          contenu,
+          created_at,
+          recette:recette_id(nom)
+        `)
+        .eq("proprietaire_id", userId);
+
+      if (!commentsError && userComments) {
+        exportData.commentaires = userComments.map((comment: any) => ({
+          id: comment.id,
+          contenu: comment.contenu,
+          date_creation: comment.created_at,
+          recette_associee: (Array.isArray(comment.recette) ? comment.recette[0]?.nom : comment.recette?.nom) || "Recette inconnue"
+        }));
+      }
+
+      // Récupérer les recettes publiées
+      if (publishedRecipes.length > 0) {
+        exportData.recettes_publiées = publishedRecipes.map((recipe: any) => ({
+          id: recipe.id,
+          nom: recipe.nom,
+          temps_preparation: recipe.temps_preparation,
+          categorie: recipe.categorie,
+          fete: recipe.fete,
+          origine: recipe.origine,
+          difficulte: recipe.difficulte,
+          ingredients: recipe.ingredient,
+          preparation: recipe.preparation,
+          image_url: recipe.images || null
+        }));
+      }
+
+      // Récupérer les recettes enregistrées
+      const { data: savedRecipesData, error: savedRecipesError } = await supabase
+        .from("recettes_sauvegardees")
+        .select(`
+          id,
+          created_at,
+          recette:recette_id(
+            id,
+            nom,
+            temps_preparation,
+            categorie,
+            fete,
+            origine,
+            difficulte,
+            images
+          )
+        `)
+        .eq("user_id", userId);
+
+      if (!savedRecipesError && savedRecipesData) {
+        exportData.recettes_enregistrées = savedRecipesData.map((saved: any) => {
+          const recetteObj = Array.isArray(saved.recette) ? saved.recette[0] : saved.recette;
+          return {
+            id: saved.id,
+            date_sauvegarde: saved.created_at,
+            recette: {
+              id: recetteObj?.id,
+              nom: recetteObj?.nom,
+              temps_preparation: recetteObj?.temps_preparation,
+              categorie: recetteObj?.categorie,
+              fete: recetteObj?.fete,
+              origine: recetteObj?.origine,
+              difficulte: recetteObj?.difficulte,
+              image_url: recetteObj?.images || null
+            }
+          };
+        });
+      }
+
+      // Générer le fichier selon le format sélectionné
+      let fileContent: string = "";
+      let mimeType: string = "application/octet-stream";
+      let fileExtension: string = "txt";
+
+      if (selectedExport === "JSON") {
+        fileContent = JSON.stringify(exportData, null, 2);
+        mimeType = "application/json";
+        fileExtension = "json";
+      } else if (selectedExport === "CSV") {
+        const csvData = convertToCSV(exportData);
+        fileContent = csvData;
+        mimeType = "text/csv";
+        fileExtension = "csv";
+      }
+
+      // Créer et télécharger le fichier
+      const blob = new Blob([fileContent], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mes_donnees_cooking_${new Date().toISOString().split('T')[0]}.${fileExtension}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      alert(`Vos données ont été exportées avec succès en format ${selectedExport} !`);
+
+    } catch (error) {
+      console.error("Erreur lors de l'export des données:", error);
+      alert("Une erreur est survenue lors de l'export de vos données");
+    }
+  }, [userId, userData, publishedRecipes, selectedExport, convertToCSV, supabase]);
+
+  // Fonction pour récupérer les recettes de l'utilisateur
+  const fetchUserRecipes = useCallback(async (userId: string) => {
     try {
       const { data: userRecipes, error: recipesError } = await supabase
         .from("recette")
-        .select("*") // On prend tout, y compris la colonne 'images'
+        .select("id, nom, temps_preparation, categorie, fete, origine, ingredient, preparation, difficulte, images")
         .eq("proprietaire_id", userId);
 
       if (recipesError) {
@@ -157,48 +472,20 @@ const AccountSettings = () => {
     } catch (error) {
       console.error("Erreur lors du chargement des recettes:", error);
     }
-  };
-
-  // --- AJOUT : Fonction pour récupérer les recettes SAUVEGARDÉES ---
-  const fetchSavedRecipes = async (userId: string) => {
-    try {
-      // On demande la table de liaison ET la recette complète associée
-      const { data: savedData, error } = await supabase
-        .from("recettes_sauvegardees")
-        .select(`
-          recette ( * ) 
-        `)
-        .eq("user_id", userId);
-
-      if (error) {
-        console.error("Erreur SQL favoris:", error.message);
-        return;
-      }
-
-      if (savedData) {
-        // On "aplatit" le résultat pour n'avoir qu'une liste de recettes
-        const formatted = savedData.map((item: any) => item.recette).filter(Boolean);
-        setSavedRecipes(formatted);
-      }
-    } catch (error) {
-      console.error("Erreur JS favoris:", error);
-    }
-  };
+  }, [supabase]);
 
   // AJOUTER UNE RECETTE
-  const handleAddRecipe = async () => {
+  const handleAddRecipe = useCallback(async () => {
     if (!userId) return;
 
     try {
       let imageUrl = null;
       
-      // Uploader l'image d'abord si elle existe
       if (newRecipe.image) {
         imageUrl = await uploadRecipeImage(newRecipe.image);
       }
 
-      // Insérer la recette avec l'URL de l'image
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("recette")
         .insert([
           {
@@ -211,17 +498,15 @@ const AccountSettings = () => {
             origine: newRecipe.origine,
             difficulte: newRecipe.difficulte,
             proprietaire_id: userId,
-            images: imageUrl // On stocke l'URL directement dans la table recette
+            images: imageUrl
           }
         ])
         .select();
 
       if (error) throw error;
 
-      // Recharger les recettes
       await fetchUserRecipes(userId);
       
-      // Réinitialiser le formulaire
       setNewRecipe({
         nom: "",
         ingredient: "",
@@ -241,18 +526,19 @@ const AccountSettings = () => {
       console.error("Erreur lors de l'ajout:", error);
       alert(`Erreur : ${error.message || "Impossible d'ajouter la recette"}`);
     }
-  };
+  }, [userId, newRecipe, uploadRecipeImage, supabase, fetchUserRecipes]);
 
   // MODIFIER UNE RECETTE
-  const handleEditRecipe = async () => {
+  const handleEditRecipe = useCallback(async () => {
     if (!editingRecipe) return;
 
     try {
-      let imageUrl = editingRecipe.images; // On garde l'ancienne image par défaut
+      let imageUrl = editingRecipe.images;
       
-      // Si une nouvelle image est sélectionnée, l'uploader (si vous avez ajouté l'input dans le mode édition)
-      // Pour l'instant on garde l'ancienne logique :
-      
+      if (editingRecipe.image) {
+        imageUrl = await uploadRecipeImage(editingRecipe.image);
+      }
+
       const { error } = await supabase
         .from("recette")
         .update({
@@ -270,7 +556,6 @@ const AccountSettings = () => {
 
       if (error) throw error;
 
-      // Recharger les recettes
       if (userId) await fetchUserRecipes(userId);
       setEditingRecipe(null);
       
@@ -280,14 +565,13 @@ const AccountSettings = () => {
       console.error("Erreur lors de la modification:", error);
       alert(`Erreur : ${error.message || "Impossible de modifier la recette"}`);
     }
-  };
+  }, [editingRecipe, uploadRecipeImage, supabase, userId, fetchUserRecipes]);
 
   // SUPPRIMER UNE RECETTE
-  const handleDeleteRecipe = async (recipeId: string) => {
+  const handleDeleteRecipe = useCallback(async (recipeId: string) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette recette ?")) return;
 
     try {
-      // On supprime la recette (Supabase gère la suppression en cascade si configuré, sinon on supprime juste la recette)
       const { error } = await supabase
         .from("recette")
         .delete()
@@ -295,19 +579,38 @@ const AccountSettings = () => {
 
       if (error) throw error;
 
-      // Recharger les recettes
       if (userId) await fetchUserRecipes(userId);
-      
       alert("Recette supprimée avec succès !");
 
     } catch (error: any) {
       console.error("Erreur lors de la suppression:", error);
       alert(`Erreur : ${error.message || "Impossible de supprimer la recette"}`);
     }
-  };
+  }, [supabase, userId, fetchUserRecipes]);
+
+  // SUPPRIMER UN COMMENTAIRE
+  const handleDeleteComment = useCallback(async (commentId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce commentaire ?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("commentaire")
+        .delete()
+        .eq("id", commentId);
+
+      if (error) throw error;
+
+      if (userId) await loadUserComments(userId);
+      alert("Commentaire supprimé avec succès !");
+
+    } catch (error: any) {
+      console.error("Erreur lors de la suppression:", error);
+      alert(`Erreur : ${error.message || "Impossible de supprimer le commentaire"}`);
+    }
+  }, [supabase, userId, loadUserComments]);
 
   // Sauvegarde des données du profil
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = useCallback(async () => {
     if (!userId) return;
 
     try {
@@ -324,7 +627,7 @@ const AccountSettings = () => {
 
       const updates: { email?: string; password?: string } = {};
 
-      if (editedData.email !== userData.email) {
+      if (editedData.email !== userData?.email) {
         updates.email = editedData.email;
       }
 
@@ -349,7 +652,77 @@ const AccountSettings = () => {
       console.error("Erreur lors de la sauvegarde:", error);
       alert(`Erreur : ${error.message || "Impossible de mettre à jour le profil"}`);
     }
-  };
+  }, [userId, editedData, userData, supabase]);
+
+  // Récupération des données de supabase
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setIsLoading(true);
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+          console.log("Utilisateur non connecté - réinitialisation des paramètres");
+          resetSettingsToDefault();
+          setIsLoading(false);
+          return;
+        }
+
+        setUserId(user.id);
+
+        // Charger les paramètres depuis la base de données
+        await loadSettingsFromDatabase(user.id);
+
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("nom, prenom, civilite")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Erreur récupération profil:", profileError.message);
+        }
+
+        const userInfos = {
+          civility: profile?.civilite || "",
+          firstName: profile?.prenom || "",
+          lastName: profile?.nom || "",
+          email: user.email || "",
+          password: "••••••••",
+        };
+
+        setUserData(userInfos);
+        setEditedData(userInfos);
+
+        // Charger les recettes de l'utilisateur
+        await fetchUserRecipes(user.id);
+
+        // Charger les recettes enregistrées
+        await loadSavedRecipes(user.id);
+
+        // Charger les commentaires
+        await loadUserComments(user.id);
+
+      } catch (error) {
+        console.error("Erreur générale:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [supabase, resetSettingsToDefault, loadSettingsFromDatabase, fetchUserRecipes, loadSavedRecipes, loadUserComments]);
+
+  // SAUVEGARDE AUTOMATIQUE DANS LA BDD QUAND L'UTILISATEUR EST CONNECTÉ
+  useEffect(() => {
+    if (userId) {
+      const timeoutId = setTimeout(() => {
+        saveSettingsToDatabase();
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [selectedTheme, selectedFont, selectedBanner, selectedExport, userId, saveSettingsToDatabase]);
 
   // Effet pour appliquer le thème
   useEffect(() => {
@@ -390,22 +763,40 @@ const AccountSettings = () => {
     }
   }, [selectedBanner]);
 
-  const handleExportData = () => {
-    console.log(`Export des données en ${selectedExport}`);
-    alert(`Export des données en ${selectedExport} initié`);
-  };
-
-  const handleCancelEdit = () => {
-    setEditedData(userData);
+  const handleCancelEdit = useCallback(() => {
+    setEditedData(userData || {
+      civility: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+    });
     setIsEditing(false);
-  };
+  }, [userData]);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = useCallback((field: string, value: string) => {
     setEditedData((prev) => ({
       ...prev,
       [field]: value,
     }));
-  };
+  }, []);
+
+  // FONCTIONS POUR MODIFIER LES PARAMÈTRES AVEC SAUVEGARDE
+  const handleThemeChange = useCallback((theme: string) => {
+    setSelectedTheme(theme);
+  }, []);
+
+  const handleFontChange = useCallback((font: string) => {
+    setSelectedFont(font);
+  }, []);
+
+  const handleBannerChange = useCallback((banner: string) => {
+    setSelectedBanner(banner);
+  }, []);
+
+  const handleExportChange = useCallback((exportFormat: string) => {
+    setSelectedExport(exportFormat);
+  }, []);
 
   if (isLoading) {
     return (
@@ -413,7 +804,7 @@ const AccountSettings = () => {
         <main className="flex-1 text-left mx-[10%] my-10 bg-[#FFFCEE] flex flex-col items-center text-center gap-2 pb-[60px] rounded-[20px] mt-32">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f4a887] mx-auto"></div>
-            <p className="mt-4 text-[#555]">Chargement de votre profil...</p>
+            <p className="mt-4">Chargement de votre profil...</p>
           </div>
         </main>
       </div>
@@ -427,18 +818,20 @@ const AccountSettings = () => {
         
         {/* Colonne de gauche - paramètres */}
         <aside className="sticky top-24">
-          <div className="bg-[#FFFCEE] p-6 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px]">
-            <h2 className="text-3xl font-bold text-[#333] m-0 mx-[10px] my-[10px] pb-10">Paramètres</h2>
+          <div className={`p-6 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px] transition-colors duration-300 ${
+            selectedTheme === "sombre" ? "bg-[#1F2937]" : "bg-[#FFFCEE]"}`}>
+            
+            <h2 className="text-3xl font-bold m-0 mx-[10px] my-[10px] pb-10">Paramètres</h2>
 
             <div className="space-y-6 mx-[10px]">
               {/* Personnalisation */}
               <div>
-                <h3 className="text-lg font-semibold text-[#333] mb-3">Personnalisation</h3>
+                <h3 className="text-lg font-semibold mb-3">Personnalisation</h3>
 
                 <div className="space-y-4">
                   {/* Thème */}
                   <div>
-                    <h4 className="text-base font-medium text-[#555] mb-2">Thème du site</h4>
+                    <h4 className="text-base font-medium mb-2">Thème du site</h4>
                     <div className="flex flex-col gap-2">
                       <label className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
                         <input
@@ -446,7 +839,7 @@ const AccountSettings = () => {
                           name="theme"
                           value="clair"
                           checked={selectedTheme === "clair"}
-                          onChange={(e) => setSelectedTheme(e.target.value)}
+                          onChange={(e) => handleThemeChange(e.target.value)}
                           className="hidden"
                         />
                         <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -463,7 +856,7 @@ const AccountSettings = () => {
                           name="theme"
                           value="sombre"
                           checked={selectedTheme === "sombre"}
-                          onChange={(e) => setSelectedTheme(e.target.value)}
+                          onChange={(e) => handleThemeChange(e.target.value)}
                           className="hidden"
                         />
                         <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -478,7 +871,7 @@ const AccountSettings = () => {
 
                   {/* Police */}
                   <div>
-                    <h4 className="text-base font-medium text-[#555] mb-2">Police préférée</h4>
+                    <h4 className="text-base font-medium mb-2">Police préférée</h4>
                     <div className="flex flex-col gap-2">
                       {["Aptos", "Century", "Impact"].map((font) => (
                         <label key={font} className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
@@ -487,7 +880,7 @@ const AccountSettings = () => {
                             name="font"
                             value={font}
                             checked={selectedFont === font}
-                            onChange={(e) => setSelectedFont(e.target.value)}
+                            onChange={(e) => handleFontChange(e.target.value)}
                             className="hidden"
                           />
                           <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -503,7 +896,7 @@ const AccountSettings = () => {
 
                   {/* Bannière */}
                   <div>
-                    <h4 className="text-base font-medium text-[#555] mb-2">Modifier la bannière</h4>
+                    <h4 className="text-base font-medium mb-2">Modifier la bannière</h4>
                     <div className="flex flex-col gap-2">
                       {["Pâtisserie", "Plat", "International"].map((banner) => (
                         <label key={banner} className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
@@ -512,7 +905,7 @@ const AccountSettings = () => {
                             name="banner"
                             value={banner}
                             checked={selectedBanner === banner}
-                            onChange={(e) => setSelectedBanner(e.target.value)}
+                            onChange={(e) => handleBannerChange(e.target.value)}
                             className="hidden"
                           />
                           <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -530,11 +923,11 @@ const AccountSettings = () => {
 
               {/* Données et confidentialité */}
               <div>
-                <h3 className="text-lg font-semibold text-[#333] mb-3">Données et confidentialité</h3>
+                <h3 className="text-lg font-semibold mb-3">Données et confidentialité</h3>
 
                 <div className="space-y-3">
                   <div>
-                    <h4 className="text-base font-medium text-[#555] mb-2 mx-[10px] my-[10px]">Télécharger mes données</h4>
+                    <h4 className="text-base font-medium mb-2 mx-[10px] my-[10px]">Télécharger mes données</h4>
                     <div className="flex flex-col gap-2 mb-3">
                       <label className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
                         <input
@@ -542,7 +935,7 @@ const AccountSettings = () => {
                           name="export"
                           value="JSON"
                           checked={selectedExport === "JSON"}
-                          onChange={(e) => setSelectedExport(e.target.value)}
+                          onChange={(e) => handleExportChange(e.target.value)}
                           className="hidden"
                         />
                         <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -559,7 +952,7 @@ const AccountSettings = () => {
                           name="export"
                           value="CSV"
                           checked={selectedExport === "CSV"}
-                          onChange={(e) => setSelectedExport(e.target.value)}
+                          onChange={(e) => handleExportChange(e.target.value)}
                           className="hidden"
                         />
                         <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -582,9 +975,10 @@ const AccountSettings = () => {
         </aside>
 
         {/* Colonne de droite - informations du compte */}
-        <main className="bg-[#FFFCEE] p-8 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px]">
+        <main className={`p-8 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px] transition-colors duration-300 ${
+          selectedTheme === "sombre" ? "bg-[#1F2937] text-white" : "bg-[#FFFCEE]"}`}>          
           <div className="flex justify-between items-start gap-4 mb-8 border-b-2 border-[#f4a887] pb-6 mx-[10px]">
-            <h1 className="m-0 text-[#333] text-3xl">Les informations du compte</h1>
+            <h1 className="m-0 text-3xl">Les informations du compte</h1>
             <div className="my-[15px] flex items-start gap-2">
               {!isEditing ? (
                 <button className={primaryBtn} onClick={() => setIsEditing(true)}>
@@ -607,13 +1001,13 @@ const AccountSettings = () => {
             <div className=" space-y-6 mx-[10px]">
               {/* Civilité */}
               <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold text-[#333] w-[180px] m-0 pt-2">Votre civilité</h3>
+                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre civilité</h3>
                 {isEditing ? (
                   <div className="flex flex-wrap gap-3 flex-1">
                     {["Monsieur", "Madame", "Ne pas renseigner"].map((civility) => (
                       <label
                         key={civility}
-                        className="flex items-center gap-3 cursor-pointer px-4 py-3 bg-white border-2 border-[#e2e8f0] rounded-[6px] mx-[5px] my-[5px]"
+                        className="flex items-center gap-3 cursor-pointer px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] mx-[5px] my-[5px]"
                       >
                         <input
                           type="radio"
@@ -633,68 +1027,68 @@ const AccountSettings = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="py-3 text-[#555] text-base flex-1 mx-[10px]">{userData.civility}</div>
+                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.civility}</div>
                 )}
               </div>
 
               {/* Prénom */}
               <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold text-[#333] w-[180px] m-0 pt-2">Votre prénom</h3>
+                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre prénom</h3>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedData.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base bg-white flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                   />
                 ) : (
-                  <div className="py-3 text-[#555] text-base flex-1 mx-[10px]">{userData.firstName}</div>
+                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.firstName}</div>
                 )}
               </div>
 
               {/* Nom */}
               <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold text-[#333] w-[180px] m-0 pt-2">Votre nom</h3>
+                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre nom</h3>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedData.lastName}
                     onChange={(e) => handleInputChange("lastName", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base bg-white flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                   />
                 ) : (
-                  <div className="py-3 text-[#555] text-base flex-1 mx-[10px]">{userData.lastName}</div>
+                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.lastName}</div>
                 )}
               </div>
 
               {/* Email */}
               <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold text-[#333] w-[180px] m-0 pt-2">Votre mail</h3>
+                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre mail</h3>
                 {isEditing ? (
                   <input
                     type="email"
                     value={editedData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base bg-white flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                   />
                 ) : (
-                  <div className="py-3 text-[#555] text-base flex-1 mx-[10px]">{userData.email}</div>
+                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.email}</div>
                 )}
               </div>
 
               {/* Mot de passe */}
               <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold text-[#333] w-[180px] m-0 pt-2">Votre mot de passe</h3>
+                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre mot de passe</h3>
                 {isEditing ? (
                   <input
                     type="password"
                     value={editedData.password === "••••••••" ? "" : editedData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base bg-white flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                     placeholder="Nouveau mot de passe"
                   />
                 ) : (
-                  <div className="py-3 text-[#555] text-base flex-1 mx-[10px]">{userData.password}</div>
+                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.password}</div>
                 )}
               </div>
             </div>
@@ -705,18 +1099,68 @@ const AccountSettings = () => {
 
           {/* Commentaires */}
           <section className="mb-10 mx-[10px]">
-            <h2 className="text-2xl font-semibold text-[#333] mb-6">Vos commentaires</h2>
+            <h2 className="text-2xl font-semibold mb-6">Vos commentaires ({comments.length})</h2>
             {comments.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
-                {comments.map((comment, index) => (
-                  <div key={index} className="bg-white p-5 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                    <p className="text-[#555]">{comment.content}</p>
+                {comments.map((comment) => (
+                  <div 
+                    key={comment.id} 
+                    className={`p-5 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-colors duration-300 ${
+                      selectedTheme === "sombre" ? "bg-[#374151] border border-[#4B5563]" : "bg-white border border-[#E5E7EB]"
+                    }`}
+                  >
+                    <p className={`mb-3 leading-relaxed ${
+                      selectedTheme === "sombre" ? "text-[#E5E7EB]" : "text-[#1F2937]"
+                    }`}>
+                      {comment.contenu}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <p className={`text-sm ${
+                        selectedTheme === "sombre" ? "text-[#9CA3AF]" : "text-[#6B7280]"
+                      }`}>
+                        Posté le {new Date(comment.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      {comment.recette && (
+  <Link 
+    href={`/articles/${comment.recette.id}`}  // Ici comment.recette.id est maintenant un number
+    className={`text-sm font-medium transition-colors ${
+      selectedTheme === "sombre" 
+        ? "text-[#f4a887] hover:text-[#e8976f]" 
+        : "text-[#f4a887] hover:text-[#e8976f]"
+    }`}
+  >
+    Voir la recette: {comment.recette.nom} →
+  </Link>
+)}
+                    </div>
+                    {/* Bouton pour supprimer le commentaire depuis le compte */}
+                    <div className="flex justify-end mt-3">
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className={`px-3 py-1 text-sm rounded transition-colors ${
+                          selectedTheme === "sombre"
+                            ? "text-[#F87171] hover:bg-[#F87171] hover:text-white"
+                            : "text-[#EF4444] hover:bg-[#EF4444] hover:text-white"
+                        }`}
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-[10px] text-[#777] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
-                <p className="text-lg">Aucun commentaire trouvé</p>
+              <div className={`text-center py-12 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px] transition-colors duration-300 ${
+                selectedTheme === "sombre" ? "bg-[#374151] text-[#9CA3AF]" : "bg-[#F9FAFB] text-[#6B7280]"
+              }`}>
+                <p className="text-lg">Vous n'avez pas encore publié de commentaires</p>
+                <p className="mt-2">Vos commentaires apparaîtront ici après avoir partagé votre avis sur des recettes.</p>
               </div>
             )}
           </section>
@@ -724,7 +1168,7 @@ const AccountSettings = () => {
           {/* Recettes publiées */}
           <section className="mb-10 mx-[10px]">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold text-[#333]">Vos recettes publiées</h2>
+              <h2 className="text-2xl font-semibold">Vos recettes publiées</h2>
               <button 
                 className={primaryBtn} 
                 onClick={() => setShowAddRecipeForm(true)}
@@ -735,7 +1179,8 @@ const AccountSettings = () => {
 
             {/* Formulaire d'ajout de recette */}
             {showAddRecipeForm && (
-              <div className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6">
+              <div className={`p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6 transition-colors duration-300 ${
+                selectedTheme === "sombre" ? "bg-[#374151]" : "bg-white"}`}>
                 <h3 className="text-xl font-semibold mb-4">Nouvelle recette</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
@@ -773,6 +1218,7 @@ const AccountSettings = () => {
                     <option value="difficile">Difficile</option>
                   </select>
                   
+                  {/*champ pour la fete*/}
                   <select
                     value={newRecipe.fete}
                       onChange={(e) => setNewRecipe({...newRecipe, fete: e.target.value})}
@@ -785,6 +1231,7 @@ const AccountSettings = () => {
                     <option value="Pâques">Pâques</option>
                   </select> 
 
+                  {/* AJOUT: Champ pour l'origine */}
                   <select
                     value={newRecipe.origine}
                     onChange={(e) => setNewRecipe({...newRecipe, origine: e.target.value})}
@@ -797,6 +1244,7 @@ const AccountSettings = () => {
                     <option value="Indien">Indien</option>
                   </select>
 
+                  {/* Champ pour l'image */}
                   <div className="md:col-span-2">
                     <label className="block text-base font-medium mb-2">
                       Image de la recette
@@ -858,7 +1306,9 @@ const AccountSettings = () => {
 
             {/* Formulaire de modification de recette */}
             {editingRecipe && (
-              <div className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6">
+              <div className={`p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6 transition-colors duration-300 ${
+                selectedTheme === "sombre" ? "bg-[#374151]" : "bg-white"}`}>                
+                
                 <h3 className="text-xl font-semibold mb-4">Modifier la recette</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
@@ -896,6 +1346,7 @@ const AccountSettings = () => {
                     <option value="difficile">Difficile</option>
                   </select>
                   
+                  {/* Champ pour la fête */}
                   <select
                     value={editingRecipe.fete}
                     onChange={(e) => setEditingRecipe({...editingRecipe, fete: e.target.value})}
@@ -908,6 +1359,7 @@ const AccountSettings = () => {
                     <option value="Pâques">Pâques</option>
                   </select>
 
+                  {/* AJOUT: Champ pour l'origine */}
                   <select
                     value={editingRecipe.origine}
                     onChange={(e) => setEditingRecipe({...editingRecipe, origine: e.target.value})}
@@ -920,15 +1372,32 @@ const AccountSettings = () => {
                     <option value="Indien">Indien</option>
                   </select>
 
+                  {/* Champ pour l'image */}
                   <div className="md:col-span-2">
                     <label className="block text-base font-medium mb-2">
                       Image de la recette
                     </label>
-                    {/* Note: l'édition d'image demande plus de logique, ici on affiche juste l'état */}
-                    {editingRecipe.images ? (
-                      <p className="text-sm text-green-600 mb-2">Image actuelle présente</p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setEditingRecipe({
+                        ...editingRecipe, 
+                        image: e.target.files?.[0] || null
+                      })}
+                      className="w-full px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                    />
+                    {editingRecipe.image ? (
+                      <p className="text-sm mt-2">
+                        Nouvelle image sélectionnée : {editingRecipe.image.name}
+                      </p>
+                    ) : editingRecipe.images ? (
+                      <p className="text-sm mt-2">
+                        Image actuelle conservée
+                      </p>
                     ) : (
-                      <p className="text-sm text-gray-500 mb-2">Pas d'image</p>
+                      <p className="text-sm mt-2">
+                        Aucune image actuelle
+                      </p>
                     )}
                   </div>
 
@@ -958,11 +1427,11 @@ const AccountSettings = () => {
               </div>
             )}
 
-            {/* Liste des recettes publiées */}
+            {/* Liste des recettes */}
             {publishedRecipes.length > 0 ? (
               <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
                 {publishedRecipes.map((recipe) => (
-                  <div key={recipe.id} className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
+                  <div key={recipe.id} className="p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
                     {/* Image de la recette */}
                     <div className="bg-[#FFFFFF] h-[140px] mb-4">
                       {recipe.images ? (
@@ -972,19 +1441,21 @@ const AccountSettings = () => {
                           className="w-full h-full object-cover rounded-[5px]"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 flex items-center justify-center rounded-[5px]">
-                          <span className="text-gray-500 text-sm">Pas d'image</span>
+                        <div className="w-full h-full bg-gradient-to-br from-[#FFFFFF] to-[#EEEEEE] flex items-center justify-center">
+                          <span className="italic">Pas d'image</span>
                         </div>
                       )}
                     </div>
                     
-                    <h3 className="text-lg font-semibold text-[#333] mb-3">{recipe.nom}</h3>
-                    <p className="text-[13px] text-[#555] mb-3">
+                    <h3 className="text-lg font-semibold mb-3">{recipe.nom}</h3>
+                    <p className="text-[13px] mb-3">
                       Temps : {recipe.temps_preparation} min
                     </p>
-                    {recipe.categorie && (
-                      <p className="text-[12px] text-[#777] mb-2">Catégorie: {recipe.categorie}</p>
-                    )}
+                    <p className="text-[13px] mb-3">
+                      Difficulté : {recipe.difficulte}
+                    </p>
+                  
+
                     <div className="flex gap-3 mt-4">
                       <button 
                         className={`${dangerBtn} flex-1`} 
@@ -1003,64 +1474,73 @@ const AccountSettings = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-[10px] text-[#777] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
+              <div className="text-center py-12 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
                 <p className="text-lg">Aucune recette publiée</p>
               </div>
             )}
           </section>
 
-          {/* --- AJOUT : SECTION RECETTES SAUVEGARDÉES --- */}
+          {/* Recettes enregistrées */}
           <section className="mb-10 mx-[10px]">
-            <h2 className="text-2xl font-semibold text-[#333] mb-6">Vos recettes enregistrées</h2>
+            <h2 className="text-2xl font-semibold mb-6">Vos recettes enregistrées</h2>
             
+            <div className="my-12 mx-auto grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-8 items-start w-[calc(100%-80px)] max-w-[1100px] box-border justify-items-center">
             {savedRecipes.length > 0 ? (
               <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
-                {savedRecipes.map((recipe) => (
-                  <div key={recipe.id} className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
+                {savedRecipes.map((savedRecipe) => (
+                  <div key={savedRecipe.id} className="p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
                     {/* Image de la recette */}
-                    <div className="bg-[#FFFFFF] h-[140px] mb-4">
-                      {recipe.images ? (
+                    <div className={`h-[140px] transition-colors duration-300 bg-[#FFFFFF]}`}>
+                      {savedRecipe.recette.images ? (
                         <img 
-                          src={recipe.images} 
-                          alt={recipe.nom}
-                          className="w-full h-full object-cover rounded-[5px]"
+                          src={savedRecipe.recette.images} 
+                          alt={savedRecipe.recette.nom}
+                          className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 flex items-center justify-center rounded-[5px]">
-                          <span className="text-gray-500 text-sm">Pas d'image</span>
-                        </div>
+                        <div className={`w-full h-full bg-gradient-to-br flex items-center justify-center transition-colors duration-300 from-[#FFFFFF] to-[#EEEEEE]}`}>
+                      <span className={`italic text-[#6B7280]"}`}>
+                        Pas d'image</span>
+                    </div>
                       )}
                     </div>
                     
-                    <h3 className="text-lg font-semibold text-[#333] mb-3">{recipe.nom}</h3>
-                    <p className="text-[13px] text-[#555] mb-3">
-                      Temps : {recipe.temps_preparation} min
+                    <h3 className="text-lg font-semibold mb-3">{savedRecipe.recette.nom}</h3>
+                    <p className="text-[13px] mb-3">
+                      Temps : {savedRecipe.recette.temps_preparation} min
+                    </p>
+                    <p className="text-[13px] mb-3">
+                      Difficulté : {savedRecipe.recette.difficulte}
+                    </p>
+                    <p className="text-[13px] text-[#6B7280]">
+                      Enregistrée le : {new Date(savedRecipe.created_at).toLocaleDateString('fr-FR')}
                     </p>
                     
-                    <Link href={`/articles/${recipe.id}`}>
-                      <button className={`${primaryBtn} w-full`}>
-                        Voir la recette
-                      </button>
+                    <Link 
+                      href={`/articles/${savedRecipe.recette.id}`}
+                      className="inline-block mt-4 text-[13px] text-[#f4a887] no-underline hover:underline"
+                    >
+                      Voir la recette →
                     </Link>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-[10px] text-[#777] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
+              <div className="text-center py-12 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
                 <p className="text-lg">Aucune recette enregistrée</p>
-                <Link href="/articles" className="text-[#f4a887] underline mt-2 block">
-                  Découvrir des recettes
-                </Link>
               </div>
             )}
+            </div>
           </section>
+        
 
           {/* Supprimer le compte */}
           <section className="mb-8 mx-[10px] my-[10px]">
-            <h2 className="text-2xl font-semibold text-[#333] mb-6">Supprimer mon compte</h2>
+            <h2 className="text-2xl font-semibold mb-6">Supprimer mon compte</h2>
 
-            <div className="bg-[#FFFCEE] p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px]">
-              <h3 className="text-lg font-medium text-[#333] mb-4">Supprimer ?</h3>
+              <div className={`p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mx-[5px] my-[5px] transition-colors duration-300 ${
+                selectedTheme === "sombre" ? "bg-[#374151] text-white" : "bg-white"}`}>              
+              <h3 className="text-lg font-medium mb-4">Supprimer ?</h3>
               <div className="flex gap-5 mb-5">
                 <label className="flex items-center gap-2 cursor-pointer py-1 mx-[5px]">
                   <input
@@ -1094,10 +1574,10 @@ const AccountSettings = () => {
                 </label>
               </div>
 
-              <h3 className="text-lg font-medium text-[#333] mb-2">Êtes-vous sûr ?</h3>
-              <p className="text-[#555] mb-4 mx-[5px]">
+              <h3 className="text-lg font-medium mb-2">Êtes-vous sûr ?</h3>
+              <p className="mb-4 mx-[5px]">
                 Réécrire la phrase suivante : <br />
-                <em className="text-[#333] italic">Je veux supprimer mon compte</em>
+                <em className="italic">Je veux supprimer mon compte</em>
               </p>
 
               <div className="mb-5 mx-[5px]">
