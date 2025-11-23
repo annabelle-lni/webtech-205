@@ -3,14 +3,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/supabase/client.js";
 
-type PageProps = {
-  searchParams: {
-    search?: string;
-    categorie?: string;
-    fete?: string;
-    origine?: string;
-  };
-};
+
 
 export default function ArticlesPage({ searchParams }: PageProps) {
   const searchQuery = searchParams.search || "";
