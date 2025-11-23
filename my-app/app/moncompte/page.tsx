@@ -1,4 +1,3 @@
-"use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/supabase/client";
 import Link from "next/link";
@@ -12,6 +11,14 @@ interface UserData {
   lastName: string;
   email: string;
   password: string;
+}
+
+// Définir le type pour les searchParams
+interface SearchParams {
+  search?: string;
+  categorie?: string;
+  fete?: string;
+  origine?: string;
 }
 
 interface Recipe {
