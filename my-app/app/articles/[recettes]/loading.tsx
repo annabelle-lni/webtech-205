@@ -33,7 +33,7 @@ function LoadingSkeleton() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className=" shadow-[0_6px_20px_rgba(0,0,0,0.08)] min-h-screen flex items-center justify-center">
       <div 
         className={`p-8 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] transition-colors duration-300 ${
           isDarkMode 

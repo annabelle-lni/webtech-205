@@ -48,7 +48,7 @@ export default function CreerCompte() {
   return (
     <div className="my-[30px] min-h-screen">
       {/* Main content - Container principal avec styles cohérents */}
-      <main className="flex-1 text-left mx-[10%] my-10 bg-[#FFFCEE] flex flex-col items-center text-center pb-[60px] rounded-[20px] mt-32">
+      <main className="flex-1 text-left mx-[10%] my-10 bg-[#FFFCEE] flex flex-col items-center text-center pb-[60px] rounded-[20px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mt-32">
         
         {/* Titre principal en italique et gras */}
         <h2 className="text-[22px] font-bold mt-12 pt-8 mb-8">

@@ -136,7 +136,7 @@ export default function ArticlesPage({ searchParams }: PageProps) {
     <div className={`my-[30px] min-h-screen transition-colors duration-300 ${
       isDarkMode ? "bg-[#111827]" : "bg-[#f5f8fc]"}`}>
       
-      <main className={`flex-1 text-left mx-[10%] my-10 flex flex-col items-center text-center pb-20 rounded-[20px] mt-32 overflow-hidden box-border transition-colors duration-300 ${
+      <main className={`flex-1 text-left mx-[10%] my-10 flex flex-col items-center text-center pb-20 rounded-[20px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mt-32 overflow-hidden box-border transition-colors duration-300 ${
         isDarkMode ? "bg-[#1F2937] text-[#FFFFFF]" : "bg-[#FFFCEE] text-[#333333]"}`}>  
         
         {/* Titre selon le filtre actif */}

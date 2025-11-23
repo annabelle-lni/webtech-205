@@ -36,7 +36,7 @@ export default function Notrehistoire() {
     }`}>
       
       {/* Section principale */}
-      <main className={`flex-1 text-left mx-[10%] my-10 flex flex-col items-center text-center gap-2 pb-[60px] rounded-[20px] mt-32 transition-colors duration-300 ${
+      <main className={`flex-1 text-left mx-[10%] my-10 flex flex-col items-center text-center gap-2 pb-[60px] rounded-[20px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mt-32 transition-colors duration-300 ${
         isDarkMode ? "bg-[#1F2937] text-[#FFFFFF]" : "bg-[#FFFCEE] text-[#333333]"
       }`}>
         
