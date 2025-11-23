@@ -50,9 +50,9 @@ const AccountSettings = () => {
   });
 
   // Classe boutons
-  const primaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]";
-  const secondaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#6c757d] text-white border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
-  const dangerBtn = "px-[1.2rem] py-[0.7rem] bg-[#ff6b6b] text-white border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
+  const primaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-transparent";
+  const secondaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#6c757d] border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
+  const dangerBtn = "px-[1.2rem] py-[0.7rem] bg-[#ff6b6b] border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
 
   // FONCTION POUR UPLOADER L'IMAGE
   const uploadRecipeImage = async (file: File) => {
@@ -378,7 +378,7 @@ const AccountSettings = () => {
         <main className="flex-1 text-left mx-[10%] my-10 bg-[#FFFCEE] flex flex-col items-center text-center gap-2 pb-[60px] rounded-[20px] mt-32">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f4a887] mx-auto"></div>
-            <p className="mt-4 text-[#555]">Chargement de votre profil...</p>
+            <p className="mt-4">Chargement de votre profil...</p>
           </div>
         </main>
       </div>
@@ -392,18 +392,20 @@ const AccountSettings = () => {
         
         {/* Colonne de gauche - paramètres */}
         <aside className="sticky top-24">
-          <div className="bg-[#FFFCEE] p-6 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px]">
-            <h2 className="text-3xl font-bold text-[#333] m-0 mx-[10px] my-[10px] pb-10">Paramètres</h2>
+          <div className={`p-6 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px] transition-colors duration-300 ${
+            selectedTheme === "sombre" ? "bg-[#1F2937]" : "bg-[#FFFCEE]"}`}>
+            
+            <h2 className="text-3xl font-bold m-0 mx-[10px] my-[10px] pb-10">Paramètres</h2>
 
             <div className="space-y-6 mx-[10px]">
               {/* Personnalisation */}
               <div>
-                <h3 className="text-lg font-semibold text-[#333] mb-3">Personnalisation</h3>
+                <h3 className="text-lg font-semibold mb-3">Personnalisation</h3>
 
                 <div className="space-y-4">
                   {/* Thème */}
                   <div>
-                    <h4 className="text-base font-medium text-[#555] mb-2">Thème du site</h4>
+                    <h4 className="text-base font-medium mb-2">Thème du site</h4>
                     <div className="flex flex-col gap-2">
                       <label className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
                         <input
@@ -443,7 +445,7 @@ const AccountSettings = () => {
 
                   {/* Police */}
                   <div>
-                    <h4 className="text-base font-medium text-[#555] mb-2">Police préférée</h4>
+                    <h4 className="text-base font-medium mb-2">Police préférée</h4>
                     <div className="flex flex-col gap-2">
                       {["Aptos", "Century", "Impact"].map((font) => (
                         <label key={font} className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
@@ -468,7 +470,7 @@ const AccountSettings = () => {
 
                   {/* Bannière */}
                   <div>
-                    <h4 className="text-base font-medium text-[#555] mb-2">Modifier la bannière</h4>
+                    <h4 className="text-base font-medium mb-2">Modifier la bannière</h4>
                     <div className="flex flex-col gap-2">
                       {["Pâtisserie", "Plat", "International"].map((banner) => (
                         <label key={banner} className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
@@ -495,11 +497,11 @@ const AccountSettings = () => {
 
               {/* Données et confidentialité */}
               <div>
-                <h3 className="text-lg font-semibold text-[#333] mb-3">Données et confidentialité</h3>
+                <h3 className="text-lg font-semibold mb-3">Données et confidentialité</h3>
 
                 <div className="space-y-3">
                   <div>
-                    <h4 className="text-base font-medium text-[#555] mb-2 mx-[10px] my-[10px]">Télécharger mes données</h4>
+                    <h4 className="text-base font-medium mb-2 mx-[10px] my-[10px]">Télécharger mes données</h4>
                     <div className="flex flex-col gap-2 mb-3">
                       <label className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
                         <input
@@ -547,9 +549,9 @@ const AccountSettings = () => {
         </aside>
 
         {/* Colonne de droite - informations du compte */}
-        <main className="bg-[#FFFCEE] p-8 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px]">
-          <div className="flex justify-between items-start gap-4 mb-8 border-b-2 border-[#f4a887] pb-6 mx-[10px]">
-            <h1 className="m-0 text-[#333] text-3xl">Les informations du compte</h1>
+        <main className={`p-8 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px] transition-colors duration-300 ${
+          selectedTheme === "sombre" ? "bg-[#1F2937] text-white" : "bg-[#FFFCEE]"}`}>          <div className="flex justify-between items-start gap-4 mb-8 border-b-2 border-[#f4a887] pb-6 mx-[10px]">
+            <h1 className="m-0 text-3xl">Les informations du compte</h1>
             <div className="my-[15px] flex items-start gap-2">
               {!isEditing ? (
                 <button className={primaryBtn} onClick={() => setIsEditing(true)}>
@@ -572,13 +574,13 @@ const AccountSettings = () => {
             <div className=" space-y-6 mx-[10px]">
               {/* Civilité */}
               <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold text-[#333] w-[180px] m-0 pt-2">Votre civilité</h3>
+                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre civilité</h3>
                 {isEditing ? (
                   <div className="flex flex-wrap gap-3 flex-1">
                     {["Monsieur", "Madame", "Ne pas renseigner"].map((civility) => (
                       <label
                         key={civility}
-                        className="flex items-center gap-3 cursor-pointer px-4 py-3 bg-white border-2 border-[#e2e8f0] rounded-[6px] mx-[5px] my-[5px]"
+                        className="flex items-center gap-3 cursor-pointer px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] mx-[5px] my-[5px]"
                       >
                         <input
                           type="radio"
@@ -598,68 +600,68 @@ const AccountSettings = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="py-3 text-[#555] text-base flex-1 mx-[10px]">{userData.civility}</div>
+                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.civility}</div>
                 )}
               </div>
 
               {/* Prénom */}
               <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold text-[#333] w-[180px] m-0 pt-2">Votre prénom</h3>
+                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre prénom</h3>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedData.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base bg-white flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                   />
                 ) : (
-                  <div className="py-3 text-[#555] text-base flex-1 mx-[10px]">{userData.firstName}</div>
+                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.firstName}</div>
                 )}
               </div>
 
               {/* Nom */}
               <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold text-[#333] w-[180px] m-0 pt-2">Votre nom</h3>
+                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre nom</h3>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedData.lastName}
                     onChange={(e) => handleInputChange("lastName", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base bg-white flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                   />
                 ) : (
-                  <div className="py-3 text-[#555] text-base flex-1 mx-[10px]">{userData.lastName}</div>
+                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.lastName}</div>
                 )}
               </div>
 
               {/* Email */}
               <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold text-[#333] w-[180px] m-0 pt-2">Votre mail</h3>
+                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre mail</h3>
                 {isEditing ? (
                   <input
                     type="email"
                     value={editedData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base bg-white flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                   />
                 ) : (
-                  <div className="py-3 text-[#555] text-base flex-1 mx-[10px]">{userData.email}</div>
+                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.email}</div>
                 )}
               </div>
 
               {/* Mot de passe */}
               <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold text-[#333] w-[180px] m-0 pt-2">Votre mot de passe</h3>
+                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre mot de passe</h3>
                 {isEditing ? (
                   <input
                     type="password"
                     value={editedData.password === "••••••••" ? "" : editedData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base bg-white flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                     placeholder="Nouveau mot de passe"
                   />
                 ) : (
-                  <div className="py-3 text-[#555] text-base flex-1 mx-[10px]">{userData.password}</div>
+                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.password}</div>
                 )}
               </div>
             </div>
@@ -670,17 +672,17 @@ const AccountSettings = () => {
 
           {/* Commentaires */}
           <section className="mb-10 mx-[10px]">
-            <h2 className="text-2xl font-semibold text-[#333] mb-6">Vos commentaires</h2>
+            <h2 className="text-2xl font-semibold mb-6">Vos commentaires</h2>
             {comments.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
                 {comments.map((comment, index) => (
-                  <div key={index} className="bg-white p-5 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                    <p className="text-[#555]">{comment.content}</p>
+                  <div key={index} className="p-5 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                    <p>{comment.content}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-[10px] text-[#777] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
+              <div className="text-center py-12 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
                 <p className="text-lg">Aucun commentaire trouvé</p>
               </div>
             )}
@@ -689,7 +691,7 @@ const AccountSettings = () => {
           {/* Recettes publiées */}
           <section className="mb-10 mx-[10px]">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold text-[#333]">Vos recettes publiées</h2>
+              <h2 className="text-2xl font-semibold">Vos recettes publiées</h2>
               <button 
                 className={primaryBtn} 
                 onClick={() => setShowAddRecipeForm(true)}
@@ -700,7 +702,8 @@ const AccountSettings = () => {
 
             {/* Formulaire d'ajout de recette */}
             {showAddRecipeForm && (
-              <div className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6">
+              <div className={`p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6 transition-colors duration-300 ${
+                selectedTheme === "sombre" ? "bg-[#374151]" : "bg-white"}`}>
                 <h3 className="text-xl font-semibold mb-4">Nouvelle recette</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
@@ -766,7 +769,7 @@ const AccountSettings = () => {
 
                   {/* Champ pour l'image */}
                   <div className="md:col-span-2">
-                    <label className="block text-base font-medium text-[#555] mb-2">
+                    <label className="block text-base font-medium mb-2">
                       Image de la recette
                     </label>
                     <input
@@ -779,7 +782,7 @@ const AccountSettings = () => {
                       className="w-full px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                     />
                     {newRecipe.image && (
-                      <p className="text-sm text-green-600 mt-2">
+                      <p className="text-sm mt-2">
                         Image sélectionnée : {newRecipe.image.name}
                       </p>
                     )}
@@ -826,7 +829,9 @@ const AccountSettings = () => {
 
             {/* Formulaire de modification de recette */}
             {editingRecipe && (
-              <div className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6">
+              <div className={`p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6 transition-colors duration-300 ${
+                selectedTheme === "sombre" ? "bg-[#374151]" : "bg-white"}`}>                
+                
                 <h3 className="text-xl font-semibold mb-4">Modifier la recette</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
@@ -892,7 +897,7 @@ const AccountSettings = () => {
 
                   {/* Champ pour l'image */}
                   <div className="md:col-span-2">
-                    <label className="block text-base font-medium text-[#555] mb-2">
+                    <label className="block text-base font-medium mb-2">
                       Image de la recette
                     </label>
                     <input
@@ -905,15 +910,15 @@ const AccountSettings = () => {
                       className="w-full px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                     />
                     {editingRecipe.image ? (
-                      <p className="text-sm text-green-600 mt-2">
+                      <p className="text-sm mt-2">
                         Nouvelle image sélectionnée : {editingRecipe.image.name}
                       </p>
                     ) : editingRecipe.images ? (
-                      <p className="text-sm text-blue-600 mt-2">
+                      <p className="text-sm mt-2">
                         Image actuelle conservée
                       </p>
                     ) : (
-                      <p className="text-sm text-gray-500 mt-2">
+                      <p className="text-sm mt-2">
                         Aucune image actuelle
                       </p>
                     )}
@@ -949,7 +954,7 @@ const AccountSettings = () => {
             {publishedRecipes.length > 0 ? (
               <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
                 {publishedRecipes.map((recipe) => (
-                  <div key={recipe.id} className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
+                  <div key={recipe.id} className="p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
                     {/* Image de la recette */}
                     <div className="bg-[#FFFFFF] h-[140px] mb-4">
                       {recipe.images ? (
@@ -966,13 +971,13 @@ const AccountSettings = () => {
                       )}
                     </div>
                     
-                    <h3 className="text-lg font-semibold text-[#333] mb-3">{recipe.nom}</h3>
+                    <h3 className="text-lg font-semibold mb-3">{recipe.nom}</h3>
                     {/*affichage du tempsd de preparation*/}
-                    <p className="text-[13px] text-[#555] mb-3">
+                    <p className="text-[13px] mb-3">
                       Temps : {recipe.temps_preparation} min
                     </p>
                     {/*affichage de la difficulté*/}
-                    <p className="text-[13px] text-[#555] mb-3">
+                    <p className="text-[13px] mb-3">
                       Difficulté : {recipe.difficulte}
                     </p>
                   
@@ -995,7 +1000,7 @@ const AccountSettings = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-[10px] text-[#777] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
+              <div className="text-center py-12 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
                 <p className="text-lg">Aucune recette publiée</p>
               </div>
             )}
@@ -1003,20 +1008,20 @@ const AccountSettings = () => {
 
           {/* Recettes enregistrées */}
           <section className="mb-10 mx-[10px]">
-            <h2 className="text-2xl font-semibold text-[#333] mb-6">Vos recettes enregistrées</h2>
+            <h2 className="text-2xl font-semibold mb-6">Vos recettes enregistrées</h2>
             
             {savedRecipes.length > 0 ? (
               <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
                 {savedRecipes.map((recipe, index) => (
-                  <div key={index} className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
+                  <div key={index} className="p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
                     <div>
-                      <h3 className="text-[#333] mb-4">{recipe.title}</h3>
+                      <h3 className="mb-4">{recipe.title}</h3>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-[10px] text-[#777] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
+              <div className="text-center py-12 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
                 <p className="text-lg">Aucune recette enregistrée</p>
               </div>
             )}
@@ -1024,10 +1029,11 @@ const AccountSettings = () => {
 
           {/* Supprimer le compte */}
           <section className="mb-8 mx-[10px] my-[10px]">
-            <h2 className="text-2xl font-semibold text-[#333] mb-6">Supprimer mon compte</h2>
+            <h2 className="text-2xl font-semibold mb-6">Supprimer mon compte</h2>
 
-            <div className="bg-[#FFFCEE] p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px]">
-              <h3 className="text-lg font-medium text-[#333] mb-4">Supprimer ?</h3>
+              <div className={`p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mx-[5px] my-[5px] transition-colors duration-300 ${
+                selectedTheme === "sombre" ? "bg-[#374151] text-white" : "bg-white"}`}>              
+              <h3 className="text-lg font-medium mb-4">Supprimer ?</h3>
               <div className="flex gap-5 mb-5">
                 <label className="flex items-center gap-2 cursor-pointer py-1 mx-[5px]">
                   <input
@@ -1061,10 +1067,10 @@ const AccountSettings = () => {
                 </label>
               </div>
 
-              <h3 className="text-lg font-medium text-[#333] mb-2">Êtes-vous sûr ?</h3>
-              <p className="text-[#555] mb-4 mx-[5px]">
+              <h3 className="text-lg font-medium mb-2">Êtes-vous sûr ?</h3>
+              <p className="mb-4 mx-[5px]">
                 Réécrire la phrase suivante : <br />
-                <em className="text-[#333] italic">Je veux supprimer mon compte</em>
+                <em className="italic">Je veux supprimer mon compte</em>
               </p>
 
               <div className="mb-5 mx-[5px]">
