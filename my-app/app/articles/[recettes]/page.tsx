@@ -18,6 +18,7 @@ export default function RecettePage({ params }: PageProps) {
   const [comments, setComments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [isSaved, setIsSaved] = useState(false);
   
   // userRating symbolise la note de l'utilisateur
   const [userRating, setUserRating] = useState(0);
@@ -65,6 +66,17 @@ export default function RecettePage({ params }: PageProps) {
           
         if (myNote) setUserRating(myNote.valeur);
       }
+
+      if (currentUser) {
+        const { data: savedEntry } = await supabase
+          .from("recettes_sauvegardees")
+          .select("id")
+          .eq("user_id", currentUser.id)
+          .eq("recette_id", recettes)
+          .maybeSingle();
+
+        if (savedEntry) setIsSaved(true);
+    }
 
     } catch (error) {
       console.error("Erreur:", error);
@@ -118,6 +130,36 @@ export default function RecettePage({ params }: PageProps) {
       alert("Erreur lors de la notation");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleToggleSave = async () => {
+    if (!user) {
+      alert("Connectez-vous pour enregistrer une recette !");
+      router.push('/connexion');
+      return;
+    }
+
+    try {
+      if (isSaved) {
+        const { error } = await supabase
+          .from("recettes_sauvegardees")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("recette_id", recettes);
+      
+        if (error) throw error;
+        setIsSaved(false);
+      } else {
+        const { error } = await supabase
+          .from("recettes_sauvegardees")
+          .insert([{ user_id: user.id, recette_id: recettes }]);
+      
+        if (error) throw error;
+        setIsSaved(true);
+      }
+    } catch (error) {
+      console.error("Erreur favoris:", error);
     }
   };
 
@@ -175,6 +217,17 @@ export default function RecettePage({ params }: PageProps) {
               </div>
               <p className="text-center text-sm text-gray-500">{userRating > 0 ? `Votre note : ${userRating}` : "Notez !"}</p>
             </div>
+
+            <button
+              onClick={handleToggleSave}
+              className={`mt-4 flex items-center justify-center gap-2 px-6 py-2 rounded-[5px] border-2 font-bold transition-all ${
+                isSaved 
+              ? "bg-[#f4a887] text-white border-[#f4a887]" 
+              : "bg-white text-[#f4a887] border-[#f4a887]"
+              }`}
+>
+              {isSaved ? " Enregistrée" : " Sauvegarder"}
+            </button>
 
             {/* Bloc Moyenne Globale */}
             <div className="p-4 bg-white rounded-lg shadow-sm w-full max-w-[300px]">
