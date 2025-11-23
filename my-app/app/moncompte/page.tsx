@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/supabase/client";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ const AccountSettings = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // États pour les paramètres
+  // États pour les paramètres avec chargement depuis le localStorage d'abord
   const [selectedTheme, setSelectedTheme] = useState("clair");
   const [selectedFont, setSelectedFont] = useState("Aptos");
   const [selectedBanner, setSelectedBanner] = useState("Pâtisserie");
@@ -54,20 +55,149 @@ const AccountSettings = () => {
   const secondaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#6c757d] border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
   const dangerBtn = "px-[1.2rem] py-[0.7rem] bg-[#ff6b6b] border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
 
+  // CHARGEMENT INITIAL DES PARAMÈTRES DEPUIS LE LOCALSTORAGE
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('selectedTheme');
+      const savedFont = localStorage.getItem('selectedFont');
+      const savedBanner = localStorage.getItem('selectedBanner');
+      
+      if (savedTheme) setSelectedTheme(savedTheme);
+      if (savedFont) setSelectedFont(savedFont);
+      if (savedBanner) setSelectedBanner(savedBanner);
+      
+      console.log("Paramètres chargés depuis localStorage:", { savedTheme, savedFont, savedBanner });
+    }
+  }, []);
+
+  // FONCTION POUR SAUVEGARDER LES PARAMÈTRES DANS LE LOCALSTORAGE
+  const saveSettingsToLocalStorage = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedTheme', selectedTheme);
+      localStorage.setItem('selectedFont', selectedFont);
+      localStorage.setItem('selectedBanner', selectedBanner);
+      console.log("Paramètres sauvegardés dans le localStorage:", {
+        theme: selectedTheme,
+        font: selectedFont,
+        banner: selectedBanner
+      });
+    }
+  };
+
+  // FONCTION POUR SAUVEGARDER LES PARAMÈTRES DANS LA BDD
+  const saveSettingsToDatabase = async () => {
+    if (!userId) return;
+
+    try {
+      const settings = {
+        theme: selectedTheme,
+        font: selectedFont,
+        banner: selectedBanner,
+        export_format: selectedExport,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from("user_settings")
+        .upsert({
+          user_id: userId,
+          settings: settings
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) throw error;
+      
+      console.log("Paramètres sauvegardés dans la base de données");
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde des paramètres:", error);
+    }
+  };
+
+  // FONCTION POUR CHARGER LES PARAMÈTRES DEPUIS LA BDD
+  const loadSettingsFromDatabase = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("user_settings")
+        .select("settings")
+        .eq("user_id", userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error("Erreur récupération paramètres:", error);
+        return;
+      }
+
+      if (data && data.settings) {
+        const settings = data.settings;
+        
+        // Mettre à jour les états et le localStorage
+        if (settings.theme) {
+          setSelectedTheme(settings.theme);
+          localStorage.setItem('selectedTheme', settings.theme);
+        }
+        if (settings.font) {
+          setSelectedFont(settings.font);
+          localStorage.setItem('selectedFont', settings.font);
+        }
+        if (settings.banner) {
+          setSelectedBanner(settings.banner);
+          localStorage.setItem('selectedBanner', settings.banner);
+        }
+        if (settings.export_format) {
+          setSelectedExport(settings.export_format);
+        }
+        
+        console.log("Paramètres chargés depuis la base de données:", settings);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des paramètres:", error);
+    }
+  };
+
+  // FONCTION POUR CHARGER LES RECETTES ENREGISTRÉES
+  const loadSavedRecipes = async (userId: string) => {
+    try {
+      const { data: savedRecipesData, error: savedRecipesError } = await supabase
+        .from("recettes_sauvegardees")
+        .select(`
+          id,
+          created_at,
+          recette:recette_id(
+            id,
+            nom,
+            temps_preparation,
+            categorie,
+            fete,
+            origine,
+            difficulte,
+            images
+          )
+        `)
+        .eq("user_id", userId);
+
+      if (savedRecipesError) {
+        console.error("Erreur récupération recettes enregistrées:", savedRecipesError.message);
+        setSavedRecipes([]);
+      } else {
+        setSavedRecipes(savedRecipesData || []);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des recettes enregistrées:", error);
+    }
+  };
+
   // FONCTION POUR UPLOADER L'IMAGE
   const uploadRecipeImage = async (file: File) => {
     try {
-      // Générer un nom de fichier unique
       const fileName = `recettes/${userId}/${Date.now()}-${file.name}`;
       
-      // Uploader l'image vers Supabase Storage
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('images')
         .upload(fileName, file);
 
       if (error) throw error;
 
-      // Récupérer l'URL publique
       const { data: { publicUrl } } = supabase.storage
         .from('images')
         .getPublicUrl(fileName);
@@ -79,6 +209,189 @@ const AccountSettings = () => {
     }
   };
 
+  // FONCTION POUR EXPORTER LES DONNÉES
+  const handleExportData = async () => {
+    if (!userId) {
+      alert("Vous devez être connecté pour exporter vos données");
+      return;
+    }
+
+    try {
+      // Récupérer toutes les données de l'utilisateur
+      const exportData: {
+        informations_personnelles: any;
+        commentaires: any[];
+        recettes_publiées: any[];
+        recettes_enregistrées: any[];
+      } = {
+        informations_personnelles: {
+          civilité: userData?.civility || "",
+          prénom: userData?.firstName || "",
+          nom: userData?.lastName || "",
+          email: userData?.email || "",
+          date_export: new Date().toISOString()
+        },
+        commentaires: [],
+        recettes_publiées: [],
+        recettes_enregistrées: []
+      };
+
+      // Récupérer les commentaires de l'utilisateur
+      const { data: userComments, error: commentsError } = await supabase
+        .from("commentaire")
+        .select(`
+          id,
+          contenu,
+          created_at,
+          recette:recette_id(nom)
+        `)
+        .eq("proprietaire_id", userId);
+
+      if (!commentsError && userComments) {
+        exportData.commentaires = userComments.map((comment: any) => ({
+          id: comment.id,
+          contenu: comment.contenu,
+          date_creation: comment.created_at,
+          // Supabase peut renvoyer la relation soit comme objet soit comme tableau selon la requête, gérer les deux cas
+          recette_associee: (Array.isArray(comment.recette) ? comment.recette[0]?.nom : comment.recette?.nom) || "Recette inconnue"
+        }));
+      }
+
+      // Récupérer les recettes publiées (déjà chargées dans publishedRecipes)
+      if (publishedRecipes.length > 0) {
+        exportData.recettes_publiées = publishedRecipes.map((recipe: any) => ({
+          id: recipe.id,
+          nom: recipe.nom,
+          temps_preparation: recipe.temps_preparation,
+          categorie: recipe.categorie,
+          fete: recipe.fete,
+          origine: recipe.origine,
+          difficulte: recipe.difficulte,
+          ingredients: recipe.ingredient,
+          preparation: recipe.preparation,
+          image_url: recipe.images || null
+        }));
+      }
+
+      // Récupérer les recettes enregistrées
+      const { data: savedRecipesData, error: savedRecipesError } = await supabase
+        .from("recettes_sauvegardees")
+        .select(`
+          id,
+          created_at,
+          recette:recette_id(
+            id,
+            nom,
+            temps_preparation,
+            categorie,
+            fete,
+            origine,
+            difficulte,
+            images
+          )
+        `)
+        .eq("user_id", userId);
+
+      if (!savedRecipesError && savedRecipesData) {
+        exportData.recettes_enregistrées = savedRecipesData.map((saved: any) => {
+          const recetteObj = Array.isArray(saved.recette) ? saved.recette[0] : saved.recette;
+          return {
+            id: saved.id,
+            date_sauvegarde: saved.created_at,
+            recette: {
+              id: recetteObj?.id,
+              nom: recetteObj?.nom,
+              temps_preparation: recetteObj?.temps_preparation,
+              categorie: recetteObj?.categorie,
+              fete: recetteObj?.fete,
+              origine: recetteObj?.origine,
+              difficulte: recetteObj?.difficulte,
+              image_url: recetteObj?.images || null
+            }
+          };
+        });
+      }
+
+      // Générer le fichier selon le format sélectionné
+      let fileContent: string = "";
+      let mimeType: string = "application/octet-stream";
+      let fileExtension: string = "txt";
+
+      if (selectedExport === "JSON") {
+        fileContent = JSON.stringify(exportData, null, 2);
+        mimeType = "application/json";
+        fileExtension = "json";
+      } else if (selectedExport === "CSV") {
+        // Convertir les données en CSV
+        const csvData = convertToCSV(exportData);
+        fileContent = csvData;
+        mimeType = "text/csv";
+        fileExtension = "csv";
+      }
+
+      // Créer et télécharger le fichier
+      const blob = new Blob([fileContent], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mes_donnees_cooking_${new Date().toISOString().split('T')[0]}.${fileExtension}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      alert(`Vos données ont été exportées avec succès en format ${selectedExport} !`);
+
+    } catch (error) {
+      console.error("Erreur lors de l'export des données:", error);
+      alert("Une erreur est survenue lors de l'export de vos données");
+    }
+  };
+
+  // FONCTION POUR CONVERTIR LES DONNÉES EN CSV
+  const convertToCSV = (data: any) => {
+    const sections = [];
+    
+    // Section Informations personnelles
+    sections.push("INFORMATIONS PERSONNELLES");
+    sections.push("Clé,Valeur");
+    Object.entries(data.informations_personnelles).forEach(([key, value]) => {
+      sections.push(`"${key}","${value}"`);
+    });
+    sections.push(""); // Ligne vide entre les sections
+
+    // Section Commentaires
+    if (data.commentaires.length > 0) {
+      sections.push("COMMENTAIRES");
+      sections.push("ID,Contenu,Date de création,Recette associée");
+      data.commentaires.forEach((comment: any) => {
+        sections.push(`"${comment.id}","${comment.contenu.replace(/"/g, '""')}","${comment.date_creation}","${comment.recette_associee}"`);
+      });
+      sections.push("");
+    }
+
+    // Section Recettes publiées
+    if (data.recettes_publiées.length > 0) {
+      sections.push("RECETTES PUBLIÉES");
+      sections.push("ID,Nom,Temps de préparation,Catégorie,Fête,Origine,Difficulté,Ingrédients,Préparation");
+      data.recettes_publiées.forEach((recipe: any) => {
+        sections.push(`"${recipe.id}","${recipe.nom}","${recipe.temps_preparation}","${recipe.categorie}","${recipe.fete}","${recipe.origine}","${recipe.difficulte}","${recipe.ingredients.replace(/"/g, '""')}","${recipe.preparation.replace(/"/g, '""')}"`);
+      });
+      sections.push("");
+    }
+
+    // Section Recettes enregistrées
+    if (data.recettes_enregistrées.length > 0) {
+      sections.push("RECETTES ENREGISTRÉES");
+      sections.push("ID sauvegarde,Date de sauvegarde,ID recette,Nom recette,Temps de préparation,Catégorie,Fête,Origine,Difficulté");
+      data.recettes_enregistrées.forEach((saved: any) => {
+        sections.push(`"${saved.id}","${saved.date_sauvegarde}","${saved.recette.id}","${saved.recette.nom}","${saved.recette.temps_preparation}","${saved.recette.categorie}","${saved.recette.fete}","${saved.recette.origine}","${saved.recette.difficulte}"`);
+      });
+    }
+
+    return sections.join("\n");
+  };
+
   // Récupération des données de supabase
   useEffect(() => {
     const fetchUserData = async () => {
@@ -87,12 +400,15 @@ const AccountSettings = () => {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {
-          console.log("Utilisateur non connecté");
+          console.log("Utilisateur non connecté - utilisation du localStorage");
           setIsLoading(false);
           return;
         }
 
         setUserId(user.id);
+
+        // Charger les paramètres depuis la base de données
+        await loadSettingsFromDatabase(user.id);
 
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
@@ -118,8 +434,20 @@ const AccountSettings = () => {
         // Charger les recettes de l'utilisateur
         await fetchUserRecipes(user.id);
 
-        setSavedRecipes([]);
-        setComments([]);
+        // Charger les recettes enregistrées
+        await loadSavedRecipes(user.id);
+
+        // Charger les commentaires
+        const { data: userComments, error: commentsError } = await supabase
+          .from("commentaire")
+          .select("id, contenu, created_at, recette:recette_id(nom)")
+          .eq("proprietaire_id", user.id);
+
+        if (!commentsError && userComments) {
+          setComments(userComments);
+        } else {
+          setComments([]);
+        }
 
       } catch (error) {
         console.error("Erreur générale:", error);
@@ -130,6 +458,22 @@ const AccountSettings = () => {
 
     fetchUserData();
   }, []);
+
+  // SAUVEGARDE AUTOMATIQUE DANS LE LOCALSTORAGE QUAND LES PARAMÈTRES CHANGENT
+  useEffect(() => {
+    saveSettingsToLocalStorage();
+  }, [selectedTheme, selectedFont, selectedBanner]);
+
+  // SAUVEGARDE AUTOMATIQUE DANS LA BDD QUAND L'UTILISATEUR EST CONNECTÉ
+  useEffect(() => {
+    if (userId) {
+      const timeoutId = setTimeout(() => {
+        saveSettingsToDatabase();
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [selectedTheme, selectedFont, selectedBanner, selectedExport, userId]);
 
   // Fonction pour récupérer les recettes de l'utilisateur
   const fetchUserRecipes = async (userId: string) => {
@@ -163,7 +507,7 @@ const AccountSettings = () => {
       }
 
       // Insérer la recette avec l'URL de l'image
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("recette")
         .insert([
           {
@@ -355,11 +699,6 @@ const AccountSettings = () => {
     }
   }, [selectedBanner]);
 
-  const handleExportData = () => {
-    console.log(`Export des données en ${selectedExport}`);
-    alert(`Export des données en ${selectedExport} initié`);
-  };
-
   const handleCancelEdit = () => {
     setEditedData(userData);
     setIsEditing(false);
@@ -370,6 +709,23 @@ const AccountSettings = () => {
       ...prev,
       [field]: value,
     }));
+  };
+
+  // FONCTIONS POUR MODIFIER LES PARAMÈTRES AVEC SAUVEGARDE
+  const handleThemeChange = (theme: string) => {
+    setSelectedTheme(theme);
+  };
+
+  const handleFontChange = (font: string) => {
+    setSelectedFont(font);
+  };
+
+  const handleBannerChange = (banner: string) => {
+    setSelectedBanner(banner);
+  };
+
+  const handleExportChange = (exportFormat: string) => {
+    setSelectedExport(exportFormat);
   };
 
   if (isLoading) {
@@ -413,7 +769,7 @@ const AccountSettings = () => {
                           name="theme"
                           value="clair"
                           checked={selectedTheme === "clair"}
-                          onChange={(e) => setSelectedTheme(e.target.value)}
+                          onChange={(e) => handleThemeChange(e.target.value)}
                           className="hidden"
                         />
                         <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -430,7 +786,7 @@ const AccountSettings = () => {
                           name="theme"
                           value="sombre"
                           checked={selectedTheme === "sombre"}
-                          onChange={(e) => setSelectedTheme(e.target.value)}
+                          onChange={(e) => handleThemeChange(e.target.value)}
                           className="hidden"
                         />
                         <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -454,7 +810,7 @@ const AccountSettings = () => {
                             name="font"
                             value={font}
                             checked={selectedFont === font}
-                            onChange={(e) => setSelectedFont(e.target.value)}
+                            onChange={(e) => handleFontChange(e.target.value)}
                             className="hidden"
                           />
                           <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -479,7 +835,7 @@ const AccountSettings = () => {
                             name="banner"
                             value={banner}
                             checked={selectedBanner === banner}
-                            onChange={(e) => setSelectedBanner(e.target.value)}
+                            onChange={(e) => handleBannerChange(e.target.value)}
                             className="hidden"
                           />
                           <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -509,7 +865,7 @@ const AccountSettings = () => {
                           name="export"
                           value="JSON"
                           checked={selectedExport === "JSON"}
-                          onChange={(e) => setSelectedExport(e.target.value)}
+                          onChange={(e) => handleExportChange(e.target.value)}
                           className="hidden"
                         />
                         <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -526,7 +882,7 @@ const AccountSettings = () => {
                           name="export"
                           value="CSV"
                           checked={selectedExport === "CSV"}
-                          onChange={(e) => setSelectedExport(e.target.value)}
+                          onChange={(e) => handleExportChange(e.target.value)}
                           className="hidden"
                         />
                         <span className="w-[18px] h-[18px] border-2 border-[#ccc] rounded-full relative flex-shrink-0">
@@ -550,7 +906,8 @@ const AccountSettings = () => {
 
         {/* Colonne de droite - informations du compte */}
         <main className={`p-8 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px] transition-colors duration-300 ${
-          selectedTheme === "sombre" ? "bg-[#1F2937] text-white" : "bg-[#FFFCEE]"}`}>          <div className="flex justify-between items-start gap-4 mb-8 border-b-2 border-[#f4a887] pb-6 mx-[10px]">
+          selectedTheme === "sombre" ? "bg-[#1F2937] text-white" : "bg-[#FFFCEE]"}`}>          
+          <div className="flex justify-between items-start gap-4 mb-8 border-b-2 border-[#f4a887] pb-6 mx-[10px]">
             <h1 className="m-0 text-3xl">Les informations du compte</h1>
             <div className="my-[15px] flex items-start gap-2">
               {!isEditing ? (
@@ -675,9 +1032,13 @@ const AccountSettings = () => {
             <h2 className="text-2xl font-semibold mb-6">Vos commentaires</h2>
             {comments.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
-                {comments.map((comment, index) => (
-                  <div key={index} className="p-5 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                    <p>{comment.content}</p>
+                {comments.map((comment) => (
+                  <div key={comment.id} className="p-5 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                    <p className="mb-2">{comment.contenu}</p>
+                    <p className="text-sm text-gray-500">
+                      Posté le {new Date(comment.created_at).toLocaleDateString('fr-FR')} 
+                      {comment.recette && ` sur la recette : ${comment.recette.nom}`}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -1012,11 +1373,40 @@ const AccountSettings = () => {
             
             {savedRecipes.length > 0 ? (
               <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
-                {savedRecipes.map((recipe, index) => (
-                  <div key={index} className="p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
-                    <div>
-                      <h3 className="mb-4">{recipe.title}</h3>
+                {savedRecipes.map((savedRecipe) => (
+                  <div key={savedRecipe.id} className="p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
+                    {/* Image de la recette */}
+                    <div className="bg-[#FFFFFF] h-[140px] mb-4">
+                      {savedRecipe.recette.images ? (
+                        <img 
+                          src={savedRecipe.recette.images} 
+                          alt={savedRecipe.recette.nom}
+                          className="w-full h-full object-cover rounded-[5px]"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#FFFFFF] to-[#EEEEEE] flex items-center justify-center">
+                          <span className="italic">Pas d'image</span>
+                        </div>
+                      )}
                     </div>
+                    
+                    <h3 className="text-lg font-semibold mb-3">{savedRecipe.recette.nom}</h3>
+                    <p className="text-[13px] mb-3">
+                      Temps : {savedRecipe.recette.temps_preparation} min
+                    </p>
+                    <p className="text-[13px] mb-3">
+                      Difficulté : {savedRecipe.recette.difficulte}
+                    </p>
+                    <p className="text-[13px] text-gray-500">
+                      Enregistrée le : {new Date(savedRecipe.created_at).toLocaleDateString('fr-FR')}
+                    </p>
+                    
+                    <Link 
+                      href={`/articles/${savedRecipe.recette.id}`}
+                      className="inline-block mt-4 text-[13px] text-[#f4a887] no-underline hover:underline"
+                    >
+                      Voir la recette →
+                    </Link>
                   </div>
                 ))}
               </div>
