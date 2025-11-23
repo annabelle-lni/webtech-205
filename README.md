@@ -71,10 +71,10 @@ http://localhost:3000 : la page d'accueil
 
 ## Guide d'utilisation
 
-1) Pour les visiteurs
+1) Pour les visiteurs:
 Recherche des recettes existantes, filtrage par catégorie, période et origine. 
 
-2) Pour les membres
+2) Pour les membres:
 S'inscrire ou se connecter à son compte. Publier modifier ou supprimer des recettes. Enregistrement de vos recettes préférées.
 
 ---
