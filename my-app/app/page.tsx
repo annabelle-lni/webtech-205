@@ -15,36 +15,22 @@ function shuffle<T>(arr: T[]) {
 }
 
 export default async function Home() {
-  // Récupération des recettes depuis Supabase
+  // Récupération des recettes depuis Supabase - MODIFIÉ : ajout de la colonne images
   const { data: recettes, error } = await supabase
     .from("recette")
-    .select("id, nom, temps_preparation");
+    .select("id, nom, temps_preparation, images"); // AJOUT: images
 
   if (error) {
     console.error("Erreur de récupération des recettes :", error.message);
     return <p>Erreur lors du chargement des recettes </p>;
   }
 
-  // Récupération des photos pour chaque recette
-  const recettesWithPhotos = await Promise.all(
-    (recettes || []).map(async (recette) => {
-      const { data: photos } = await supabase
-        .from("photo")
-        .select("url_photo")
-        .eq("id_recette", recette.id)
-        .limit(1);
-
-      return {
-        ...recette,
-        photoUrl: photos && photos.length > 0 ? photos[0].url_photo : null
-      };
-    })
-  );
+  const recettesWithImages = recettes || [];
 
   // On affiche aléatoirement 4 recettes
-  const recettesToShow = recettesWithPhotos && recettesWithPhotos.length > 4 
-    ? shuffle(recettesWithPhotos).slice(0, 4) 
-    : recettesWithPhotos ?? [];
+  const recettesToShow = recettesWithImages && recettesWithImages.length > 4 
+    ? shuffle(recettesWithImages).slice(0, 4) 
+    : recettesWithImages ?? [];
 
   return (
     <div className="min-h-screen pt-8 ">
@@ -88,64 +74,60 @@ export default async function Home() {
                 {/* shadow-[0_1px_3px_rgba(0,0,0,0.1)] → ombre légère */}
                 {/* w-[250px] → largeur fixe de 250px */}
 
-                {/* Image */}
-                  <div className="h-[140px]">
-                    {/* h-[140px] → hauteur fixe de 140px */}
-                    {recette.photoUrl ? (
-                      <img 
-                        src={recette.photoUrl} 
-                        alt={recette.nom}
-                        className="w-full h-full object-cover"/>
-                      
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-[#FFFFFF] to-[#EEEEEE] flex items-center justify-center">
-                        {/* bg-gradient-to-br → dégradé gris */}
-                        <span className="italic">Pas d'image</span>
-                      </div>
-                    )}
-                </div>
-                
-                {/* Partie basse dans la couleur de base avec plus d'espace */}
-                <div className="bg-[#FFFCEE] mx-[10px] my-[10px] pb-[15px]">
-                  {/* mx-[10px], my-[10px] & pb-[15px] → marges pour meilleur affichage */}
-                  <h3 className="font-semibold">{recette.nom}</h3>
-                  <p className="text-[13px]">
-                    Temps de préparation : {recette.temps_preparation} min
-                  </p>
-                  <Link 
-                    href={`/articles/${recette.id}`} 
-                    className="text-[13px] text-[#f4a887] no-underline hover:underline">                 
-                    Voir la recette →
-                  </Link>
-                </div>
+                {/* Image - MODIFIÉ : utilisation de recette.images */}
+                <div className="h-[140px]">
+                  {/* h-[140px] → hauteur fixe de 140px */}
+                  {recette.images ? (
+                    <img 
+                      src={recette.images} 
+                      alt={recette.nom}
+                      className="w-full h-full object-cover"/>
+                    
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-[#FFFFFF] to-[#EEEEEE] flex items-center justify-center">
+                      {/* bg-gradient-to-br → dégradé gris */}
+                      <span className="italic">Pas d'image</span>
+                    </div>
+                  )}
               </div>
-            ))
-          ) : (
-            <p className="text-center">Aucune recette trouvée.</p>
-          )}
-        </div>
+              
+              {/* Partie basse dans la couleur de base avec plus d'espace */}
+              <div className="bg-[#FFFCEE] mx-[10px] my-[10px] pb-[15px]">
+                {/* mx-[10px], my-[10px] & pb-[15px] → marges pour meilleur affichage */}
+                <h3 className="font-semibold">{recette.nom}</h3>
+                <p className="text-[13px]">
+                  Temps de préparation : {recette.temps_preparation} min
+                </p>
+                <Link 
+                  href={`/articles/${recette.id}`} 
+                  className="text-[13px] text-[#f4a887] no-underline hover:underline">                 
+                  Voir la recette →
+                </Link>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-center">Aucune recette trouvée.</p>
+        )}
+      </div>
 
-        {/* Témoignage avec plus d'espace depuis les recettes */}
-        <div className="bg-[#FFFFFF] my-[50px] pb-[20px] border-l-4 border-[#f4a887] w-[90%] max-w-4xl mx-auto text-left shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
-          {/* max-w-4xl → Largeur maximale de 56rem (896px) */}
-          {/* my-[50px] → marge haut et bas de 50px */}
-          {/* pb-[20px] → fait un padding de 20px en bas*/}
-          {/* border-l-4 et border-[#f4a887] → barre orange de 4px sur le côté gauche */}
-          
-          <p className="mx-[15px] leading-relaxed mb-4 text-base">
+      {/* Témoignage avec plus d'espace depuis les recettes */}
+      <div className="bg-[#FFFFFF] my-[50px] pb-[20px] border-l-4 border-[#f4a887] w-[90%] max-w-4xl mx-auto text-left shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
+        {/* max-w-4xl → Largeur maximale de 56rem (896px) */}
+        {/* my-[50px] → marge haut et bas de 50px */}
+        {/* pb-[20px] → fait un padding de 20px en bas*/}
+        {/* border-l-4 et border-[#f4a887] → barre orange de 4px sur le côté gauche */}
+        
+        <p className="mx-[15px] leading-relaxed mb-4 text-base">
 
-            <strong className="font-semibold">Cooking a changé ma vie !</strong> Grâce à ce site j'ai pu diversifier mes
-            connaissances dans les plats et les desserts. J'ai pu totalement me reconstruire et
-            retrouver une famille. Maintenant j'ai une femme et 2 enfants qui mangent
-            diversifiés. Merci encore !
-          </p>
-          <em className="mx-[5px] text-sm">~ Commentaire de l'un de nos meilleurs clients (Jonathan Cohen)</em>
-        </div>
+          <strong className="font-semibold">Cooking a changé ma vie !</strong> Grâce à ce site j'ai pu diversifier mes
+          connaissances dans les plats et les desserts. J'ai pu totalement me reconstruire et
+          retrouver une famille. Maintenant j'ai une femme et 2 enfants qui mangent
+          diversifiés. Merci encore !
+        </p>
+        <em className="mx-[5px] text-sm">~ Commentaire de l'un de nos meilleurs clients (Jonathan Cohen)</em>
       </div>
     </div>
+  </div>
   );
 }
-
-    //conseil du prof
-    //object subpabase puis on stock et apres on obtient une url de l'image pour l'envoyer dans la bdd
-    //https://supabase.com/docs/guides/storage

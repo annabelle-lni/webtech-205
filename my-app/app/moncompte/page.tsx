@@ -45,26 +45,46 @@ const AccountSettings = () => {
     categorie: "",
     fete: "",
     origine: "",
-    difficulte: "faible"
+    difficulte: "faible",
+    image: null as File | null
   });
 
-  // Classe boutons (utiliser le style fourni)
-  const primaryBtn =
-    "px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]";
-  const secondaryBtn =
-    "px-[1.2rem] py-[0.7rem] bg-[#6c757d] text-white border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
-  const dangerBtn =
-    "px-[1.2rem] py-[0.7rem] bg-[#ff6b6b] text-white border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
+  // Classe boutons
+  const primaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]";
+  const secondaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#6c757d] text-white border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
+  const dangerBtn = "px-[1.2rem] py-[0.7rem] bg-[#ff6b6b] text-white border-none rounded-[3px] text-base cursor-pointer hover:opacity-90";
+
+  // FONCTION POUR UPLOADER L'IMAGE
+  const uploadRecipeImage = async (file: File) => {
+    try {
+      // Générer un nom de fichier unique
+      const fileName = `recettes/${userId}/${Date.now()}-${file.name}`;
+      
+      // Uploader l'image vers Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      // Récupérer l'URL publique
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Erreur upload image:', error);
+      return null;
+    }
+  };
 
   // Récupération des données de supabase
   useEffect(() => {
     const fetchUserData = async () => {
       setIsLoading(true);
       try {
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {
           console.log("Utilisateur non connecté");
@@ -98,9 +118,8 @@ const AccountSettings = () => {
         // Charger les recettes de l'utilisateur
         await fetchUserRecipes(user.id);
 
-        // Simuler le chargement des autres données utilisateur
-        setSavedRecipes([]); // Aucune recette enregistrée
-        setComments([]); // Aucun commentaire
+        setSavedRecipes([]);
+        setComments([]);
 
       } catch (error) {
         console.error("Erreur générale:", error);
@@ -117,33 +136,14 @@ const AccountSettings = () => {
     try {
       const { data: userRecipes, error: recipesError } = await supabase
         .from("recette")
-        .select("id, nom, temps_preparation, categorie, fete, origine, ingredient, preparation, difficulte")
+        .select("id, nom, temps_preparation, categorie, fete, origine, ingredient, preparation, difficulte, images")
         .eq("proprietaire_id", userId);
 
       if (recipesError) {
         console.error("Erreur récupération recettes:", recipesError.message);
         setPublishedRecipes([]);
       } else {
-        // Récupération des photos pour chaque recette publiée
-        if (userRecipes && userRecipes.length > 0) {
-          const recipesWithPhotos = await Promise.all(
-            userRecipes.map(async (recipe) => {
-              const { data: photos } = await supabase
-                .from("photo")
-                .select("url_photo")
-                .eq("id_recette", recipe.id)
-                .limit(1);
-
-              return {
-                ...recipe,
-                photoUrl: photos && photos.length > 0 ? photos[0].url_photo : null
-              };
-            })
-          );
-          setPublishedRecipes(recipesWithPhotos);
-        } else {
-          setPublishedRecipes([]);
-        }
+        setPublishedRecipes(userRecipes || []);
       }
     } catch (error) {
       console.error("Erreur lors du chargement des recettes:", error);
@@ -155,6 +155,14 @@ const AccountSettings = () => {
     if (!userId) return;
 
     try {
+      let imageUrl = null;
+      
+      // Uploader l'image d'abord si elle existe
+      if (newRecipe.image) {
+        imageUrl = await uploadRecipeImage(newRecipe.image);
+      }
+
+      // Insérer la recette avec l'URL de l'image
       const { data, error } = await supabase
         .from("recette")
         .insert([
@@ -167,7 +175,8 @@ const AccountSettings = () => {
             fete: newRecipe.fete,
             origine: newRecipe.origine,
             difficulte: newRecipe.difficulte,
-            proprietaire_id: userId // L'ID de l'utilisateur connecté
+            proprietaire_id: userId,
+            images: imageUrl
           }
         ])
         .select();
@@ -186,7 +195,8 @@ const AccountSettings = () => {
         categorie: "",
         fete: "",
         origine: "",
-        difficulte: "faible"
+        difficulte: "faible",
+        image: null
       });
       setShowAddRecipeForm(false);
       
@@ -203,6 +213,14 @@ const AccountSettings = () => {
     if (!editingRecipe) return;
 
     try {
+      let imageUrl = editingRecipe.images;
+      
+      // Si une nouvelle image est sélectionnée, l'uploader
+      if (editingRecipe.image) {
+        imageUrl = await uploadRecipeImage(editingRecipe.image);
+      }
+
+      // Mettre à jour la recette
       const { error } = await supabase
         .from("recette")
         .update({
@@ -213,7 +231,8 @@ const AccountSettings = () => {
           categorie: editingRecipe.categorie,
           fete: editingRecipe.fete,
           origine: editingRecipe.origine,
-          difficulte: editingRecipe.difficulte
+          difficulte: editingRecipe.difficulte,
+          images: imageUrl
         })
         .eq("id", editingRecipe.id);
 
@@ -236,17 +255,6 @@ const AccountSettings = () => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette recette ?")) return;
 
     try {
-      // D'abord supprimer les photos associées
-      const { error: photosError } = await supabase
-        .from("photo")
-        .delete()
-        .eq("id_recette", recipeId);
-
-      if (photosError) {
-        console.error("Erreur suppression photos:", photosError);
-      }
-
-      // Puis supprimer la recette
       const { error } = await supabase
         .from("recette")
         .delete()
@@ -254,9 +262,7 @@ const AccountSettings = () => {
 
       if (error) throw error;
 
-      // Recharger les recettes
       if (userId) await fetchUserRecipes(userId);
-      
       alert("Recette supprimée avec succès !");
 
     } catch (error: any) {
@@ -731,6 +737,54 @@ const AccountSettings = () => {
                     <option value="modéré">Moyen</option>
                     <option value="difficile">Difficile</option>
                   </select>
+                  
+                  {/*champ pour la fete*/}
+                  <select
+                    value={newRecipe.fete}
+                      onChange={(e) => setNewRecipe({...newRecipe, fete: e.target.value})}
+                      className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  >
+                    <option value="">Fête associée</option>
+                    <option value="Nouvel an">Nouvel an</option>
+                    <option value="Noël">Noël</option>
+                    <option value="Anniversaire">Anniversaire</option>
+                    <option value="Pâques">Pâques</option>
+                  </select> 
+
+                  {/* AJOUT: Champ pour l'origine */}
+                  <select
+                    value={newRecipe.origine}
+                    onChange={(e) => setNewRecipe({...newRecipe, origine: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  >
+                    <option value="">Origine</option>
+                    <option value="Français">Français</option>
+                    <option value="Japonais">Japonais</option>
+                    <option value="Italien">Italien</option>
+                    <option value="Indien">Indien</option>
+                  </select>
+
+                  {/* Champ pour l'image */}
+                  <div className="md:col-span-2">
+                    <label className="block text-base font-medium text-[#555] mb-2">
+                      Image de la recette
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setNewRecipe({
+                        ...newRecipe, 
+                        image: e.target.files?.[0] || null
+                      })}
+                      className="w-full px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                    />
+                    {newRecipe.image && (
+                      <p className="text-sm text-green-600 mt-2">
+                        Image sélectionnée : {newRecipe.image.name}
+                      </p>
+                    )}
+                  </div>
+
                   <textarea
                     placeholder="Ingrédients"
                     value={newRecipe.ingredient}
@@ -750,7 +804,20 @@ const AccountSettings = () => {
                   <button className={primaryBtn} onClick={handleAddRecipe}>
                     Ajouter
                   </button>
-                  <button className={secondaryBtn} onClick={() => setShowAddRecipeForm(false)}>
+                  <button className={secondaryBtn} onClick={() => {
+                    setShowAddRecipeForm(false);
+                    setNewRecipe({
+                      nom: "",
+                      ingredient: "",
+                      temps_preparation: "",
+                      preparation: "",
+                      categorie: "",
+                      fete: "",
+                      origine: "",
+                      difficulte: "faible",
+                      image: null
+                    });
+                  }}>
                     Annuler
                   </button>
                 </div>
@@ -796,6 +863,62 @@ const AccountSettings = () => {
                     <option value="modéré">Moyen</option>
                     <option value="difficile">Difficile</option>
                   </select>
+                  
+                  {/* Champ pour la fête */}
+                  <select
+                    value={editingRecipe.fete}
+                    onChange={(e) => setEditingRecipe({...editingRecipe, fete: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  >
+                    <option value="">Fête associée</option>
+                    <option value="Nouvel an">Nouvel an</option>
+                    <option value="Noël">Noël</option>
+                    <option value="Anniversaire">Anniversaire</option>
+                    <option value="Pâques">Pâques</option>
+                  </select>
+
+                  {/* AJOUT: Champ pour l'origine */}
+                  <select
+                    value={editingRecipe.origine}
+                    onChange={(e) => setEditingRecipe({...editingRecipe, origine: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  >
+                    <option value="">Origine</option>
+                    <option value="Français">Français</option>
+                    <option value="Japonais">Japonais</option>
+                    <option value="Italien">Italien</option>
+                    <option value="Indien">Indien</option>
+                  </select>
+
+                  {/* Champ pour l'image */}
+                  <div className="md:col-span-2">
+                    <label className="block text-base font-medium text-[#555] mb-2">
+                      Image de la recette
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setEditingRecipe({
+                        ...editingRecipe, 
+                        image: e.target.files?.[0] || null
+                      })}
+                      className="w-full px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                    />
+                    {editingRecipe.image ? (
+                      <p className="text-sm text-green-600 mt-2">
+                        Nouvelle image sélectionnée : {editingRecipe.image.name}
+                      </p>
+                    ) : editingRecipe.images ? (
+                      <p className="text-sm text-blue-600 mt-2">
+                        Image actuelle conservée
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-500 mt-2">
+                        Aucune image actuelle
+                      </p>
+                    )}
+                  </div>
+
                   <textarea
                     placeholder="Ingrédients"
                     value={editingRecipe.ingredient}
@@ -829,26 +952,31 @@ const AccountSettings = () => {
                   <div key={recipe.id} className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
                     {/* Image de la recette */}
                     <div className="bg-[#FFFFFF] h-[140px] mb-4">
-                      {recipe.photoUrl ? (
+                      {recipe.images ? (
                         <img 
-                          src={recipe.photoUrl} 
+                          src={recipe.images} 
                           alt={recipe.nom}
                           className="w-full h-full object-cover rounded-[5px]"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 flex items-center justify-center rounded-[5px]">
-                          <span className="text-gray-500 text-sm">Pas d'image</span>
+                        <div className="w-full h-full bg-gradient-to-br from-[#FFFFFF] to-[#EEEEEE] flex items-center justify-center">
+                          {/* bg-gradient-to-br → dégradé gris */}
+                          <span className="italic">Pas d'image</span>
                         </div>
                       )}
                     </div>
                     
                     <h3 className="text-lg font-semibold text-[#333] mb-3">{recipe.nom}</h3>
+                    {/*affichage du tempsd de preparation*/}
                     <p className="text-[13px] text-[#555] mb-3">
                       Temps : {recipe.temps_preparation} min
                     </p>
-                    {recipe.categorie && (
-                      <p className="text-[12px] text-[#777] mb-2">Catégorie: {recipe.categorie}</p>
-                    )}
+                    {/*affichage de la difficulté*/}
+                    <p className="text-[13px] text-[#555] mb-3">
+                      Difficulté : {recipe.difficulte}
+                    </p>
+                  
+
                     <div className="flex gap-3 mt-4">
                       <button 
                         className={`${dangerBtn} flex-1`} 

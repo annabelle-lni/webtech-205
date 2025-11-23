@@ -14,7 +14,6 @@ export default function RecettePage({ params }: PageProps) {
   const router = useRouter();
   
   const [recetteData, setRecetteData] = useState<any>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -44,15 +43,7 @@ export default function RecettePage({ params }: PageProps) {
 
       if (error || !recette) throw error;
       setRecetteData(recette);
-
-      // On récupère la photo
-      const { data: photos } = await supabase
-        .from("photo")
-        .select("url_photo")
-        .eq("id_recette", recettes)
-        .limit(1);
-      setPhotoUrl(photos?.[0]?.url_photo || null);
-
+      
       // Les commentaires
       await fetchComments(recettes);
       
@@ -199,13 +190,89 @@ export default function RecettePage({ params }: PageProps) {
             
             {/* Image */}
             <div className="w-full max-w-[300px] bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              {photoUrl ? <img src={photoUrl} alt={recetteData.nom} className="w-full h-64 object-cover" /> : <div className="h-64 bg-gray-200 text-center pt-24">Pas d'image</div>}
+              {recetteData.images ? (
+                <img 
+                  src={recetteData.images} 
+                  alt={recetteData.nom} 
+                  className="w-full h-64 object-cover" 
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-[#FFFFFF] to-[#EEEEEE] flex items-center justify-center">
+                  {/* bg-gradient-to-br → dégradé gris */}
+                  <span className="italic">Pas d'image</span>
+                </div>
+              )}
+            </div> 
+
+            {/* Temps de préparation */}
+            <div className="mt-4 p-4 bg-white rounded-lg shadow-sm w-full max-w-[300px]">
+              <p className="text-lg font-semibold text-center text-gray-800">
+                ⏱️ Préparation : <span className="text-[#f4a887]">{recetteData.temps_preparation} min</span>
+              </p>
             </div>
 
+          {/* AJOUT: Affichage des informations supplémentaires */}
+            {(recetteData.categorie || recetteData.fete || recetteData.origine) && (
+              <div className="mt-4 p-4 rounded-lg shadow-sm w-full max-w-[300px]">
+                <h3 className="text-lg font-semibold text-center mb-2">Informations</h3>
+                
+                {/* Bloc Moyenne Globale */}
+                <div className="p-4 rounded-lg shadow-sm w-full max-w-[300px]">
+                  <p className="text-lg font-semibold text-center">
+                  Note moyenne : <span className="text-[#f4a887] font-bold text-2xl">{displayAverage}</span>/5
+                  </p>
+                </div>
+
+                {recetteData.categorie && (
+                  <p className="text-sm text-gray-700 mb-1 text-center">
+                    <span className="font-medium">Catégorie:</span> {recetteData.categorie}
+                  </p>
+                )}
+                {recetteData.fete && (
+                  <p className="text-sm text-gray-700 mb-1 text-center">
+                    <span className="font-medium">Fête:</span> {recetteData.fete}
+                  </p>
+                )}
+                {recetteData.origine && (
+                  <p className="text-sm text-gray-700 text-center">
+                    <span className="font-medium">Origine:</span> {recetteData.origine}
+                  </p>
+                )}
+              </div>        
+            )}
+            {/* Bouton Enregistrer */}
+            
+          </div>
+
+          {/*je veux que le bouton soit a droite de l image*/}
+          <div className=" my-[10px] mx-[10px] text-right">
+            <button
+              onClick={handleToggleSave}
+              className={`px-[1.2rem] py-[0.7rem] border-none rounded-[3px] text-base cursor-pointer bg-[#f4a887] hover:bg-[#FFFCEE]`}
+            >
+              {isSaved ? "Recette enregistrée ★" : "Enregistrer la recette ☆"}
+            </button>
+          </div>
+
+
+          {/*si on aime pas le blanc on pourra remettre la*/}
+          <div className="bg-[#FFFFFF] p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px]">
+            {/* Ingrédients */}
+            <section className="bg-[#FFFCEE] p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px]">
+              <h2>🛒 Ingrédients</h2>
+              <div className="text-gray-700 leading-relaxed whitespace-pre-line">{recetteData.ingredient}</div>
+            </section>
+
+            {/* Préparation */}
+            <section className="bg-[#FFFCEE] p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px]">
+              <h2>👨‍🍳 Préparation</h2>
+              <div className="text-gray-700 leading-relaxed whitespace-pre-line">{recetteData.preparation}</div>
+            </section>
+
             {/* Bloc Notation */}
-            <div className="p-4 bg-white rounded-lg shadow-sm w-full max-w-[300px] mb-4">
-              <h3 className="text-lg font-semibold text-center mb-3">Noter cette recette</h3>
-              <div className="flex justify-center space-x-1 mb-2">
+            <section className="bg-[#FFFCEE] p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px]">
+              <h2>🗒️ Notez cette recette</h2>
+              <div className="flex space-x-1 mb-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
@@ -215,57 +282,17 @@ export default function RecettePage({ params }: PageProps) {
                   >★</button>
                 ))}
               </div>
-              <p className="text-center text-sm text-gray-500">{userRating > 0 ? `Votre note : ${userRating}` : "Notez !"}</p>
-            </div>
-
-            <button
-              onClick={handleToggleSave}
-              className={`mt-4 flex items-center justify-center gap-2 px-6 py-2 rounded-[5px] border-2 font-bold transition-all ${
-                isSaved 
-              ? "bg-[#f4a887] text-white border-[#f4a887]" 
-              : "bg-white text-[#f4a887] border-[#f4a887]"
-              }`}
->
-              {isSaved ? " Enregistrée" : " Sauvegarder"}
-            </button>
-
-            {/* Bloc Moyenne Globale */}
-            <div className="p-4 bg-white rounded-lg shadow-sm w-full max-w-[300px]">
-              <p className="text-lg font-semibold text-center">
-                Note moyenne : <span className="text-[#f4a887] font-bold text-2xl">{displayAverage}</span>/5
-              </p>
-            </div>
-
-            <div className="mt-4 p-4 bg-white rounded-lg shadow-sm w-full max-w-[300px]">
-              <p className="text-lg font-semibold text-center text-gray-800">
-                ⏱️ Préparation : <span className="text-[#f4a887]">{recetteData.temps_preparation} min</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="lg:w-2/3 space-y-8">
-            {/* Ingrédients */}
-            <section className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-[#f4a887]">🛒 Ingrédients</h2>
-              <div className="text-gray-700 leading-relaxed whitespace-pre-line">{recetteData.ingredient}</div>
-            </section>
-
-            {/* Préparation */}
-            <section className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-[#f4a887]">👨‍🍳 Préparation</h2>
-              <div className="text-gray-700 leading-relaxed whitespace-pre-line">{recetteData.preparation}</div>
+              <p className="text-sm text-gray-500">{userRating > 0 ? `Votre note : ${userRating}` : "Vous avez essayé la recette ? Donnez une note !"}</p>
             </section>
 
             {/* Commentaires */}
-            <section className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-[#f4a887]">
-                💬 Commentaires ({comments.length})
-              </h2>
+            <section className="bg-[#FFFCEE] p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px]">
+              <h2>💬 Commentaires ({comments.length})</h2>
               
               {user && (
-                <div className="mb-6">
+                <div className="">
                   <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Votre avis..." className="w-full px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] outline-none resize-none" rows={3} />
-                  <button onClick={handleAddComment} disabled={isSubmitting || !newComment.trim()} className="mt-3 px-6 py-2 bg-[#f4a887] text-[#333] rounded-[5px] hover:bg-[#FFFCEE] disabled:opacity-50">
+                  <button onClick={handleAddComment} disabled={isSubmitting || !newComment.trim()} className="px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]">
                     {isSubmitting ? "Envoi..." : "Publier"}
                   </button>
                 </div>

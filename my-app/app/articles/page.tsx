@@ -22,7 +22,7 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
   // Récupération des recettes avec filtres
   let query = supabase
     .from("recette")
-    .select("id, nom, temps_preparation, categorie, fete, origine");
+    .select("id, nom, temps_preparation, categorie, fete, origine, difficulte, images");
 
   // Appliquer les filtres selon les paramètres
   if (searchQuery) {
@@ -50,21 +50,8 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
     console.log("📝 Exemple de recette:", recettes[0]);
   }
 
-  // Récupération des photos pour chaque recette
-  const recettesWithPhotos = await Promise.all(
-    (recettes || []).map(async (recette) => {
-      const { data: photos } = await supabase
-        .from("photo")
-        .select("url_photo")
-        .eq("id_recette", recette.id)
-        .limit(1);
-
-      return {
-        ...recette,
-        photoUrl: photos && photos.length > 0 ? photos[0].url_photo : null
-      };
-    })
-  );
+  // Utiliser directement les recettes avec la colonne images
+  const recettesWithImages = recettes || [];
 
   // Fonction pour générer le titre selon le filtre actif
   const getPageTitle = () => {
@@ -96,7 +83,7 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
       </h1>
 
       {/* Message si aucun résultat avec filtre actif */}
-      {hasActiveFilter && recettesWithPhotos.length === 0 && (
+      {hasActiveFilter && recettesWithImages.length === 0 && (
         <div className="mb-8">
           <p className="text-[#555] text-lg mb-4">
             Aucune recette trouvée pour ce filtre
@@ -111,7 +98,7 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
       )}
 
       {/* Message si aucune recette du tout (sans filtre) */}
-      {!hasActiveFilter && recettesWithPhotos.length === 0 && (
+      {!hasActiveFilter && recettesWithImages.length === 0 && (
         <div className="mb-8">
           <p className="text-[#555] text-lg">
             Aucune recette disponible pour le moment.
@@ -120,10 +107,10 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
       )}
 
       {/* Informations sur les résultats */}
-      {recettesWithPhotos.length > 0 && (
+      {recettesWithImages.length > 0 && (
         <div className="mb-6">
           <p className="text-[#555] text-lg">
-            {recettesWithPhotos.length} recette(s) trouvée(s)
+            {recettesWithImages.length} recette(s) trouvée(s)
             {hasActiveFilter && (
               <Link 
                 href="/articles" 
@@ -138,33 +125,38 @@ export default async function ArticlesPage({ searchParams }: PageProps) {
 
       {/* Grille des recettes (identique à avant) */}
       <div className="my-12 mx-auto grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-8 items-start w-[calc(100%-80px)] max-w-[1100px] box-border justify-items-center">
-        {recettesWithPhotos.length > 0 ? (
-          recettesWithPhotos.map((recette) => (
+        {recettesWithImages.length > 0 ? (
+          recettesWithImages.map((recette) => (
             <div 
               key={recette.id} 
               className="my-[10px] bg-[#FFFCEE] rounded-[5px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] w-[250px] overflow-hidden text-left my-4"
             >
-              {/* Image de la recette */}
+              {/* Image de la recette : utilisation de recette.images */}
               <div className="bg-[#FFFFFF] h-[140px]">
-                {recette.photoUrl ? (
+                {recette.images ? (
                   <img 
-                    src={recette.photoUrl} 
+                    src={recette.images} 
                     alt={recette.nom}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 flex items-center justify-center">
-                    <span className="text-gray-500 text-sm">Pas d'image</span>
+                  <div className="w-full h-full bg-gradient-to-br from-[#FFFFFF] to-[#EEEEEE] flex items-center justify-center">
+                    {/* bg-gradient-to-br → dégradé gris */}
+                    <span className="italic">Pas d'image</span>
                   </div>
                 )}
               </div>
 
-              {/* Contenu de la carte - SIMPLIFIÉ */}
+              {/* Contenu de la carte */}
               <div className="p-5 bg-[#FFFCEE]">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">{recette.nom}</h3>
                 <p className="text-[13px] text-[#555] mb-3">
                   Temps de préparation : {recette.temps_preparation} min
                 </p>
+                <p className="text-[13px] text-[#555] mb-3">
+                  Difficulté : {recette.difficulte}
+                </p>
+
                 <Link 
                   href={`/articles/${recette.id}`} 
                   className="inline-block text-[13px] text-[#f4a887] no-underline hover:underline"
