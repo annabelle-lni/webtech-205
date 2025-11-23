@@ -8,7 +8,6 @@ import { supabase } from "@/supabase/client";
 import { AuthProvider, useAuth } from "@/components/authentification"; 
 
 const HeaderButtons = () => {
-  // On récupère l'état utilisateur pour savoir si on est connecté ou non
   const { user } = useAuth(); 
 
   const handleLogout = async () => {
@@ -60,20 +59,23 @@ export default function RootLayout({
     }
   };
 
+  // Fonction simplifiée pour les filtres - juste la redirection
+  const handleFilter = (filterType: string, filterValue: string) => {
+    router.push(`/articles?${filterType}=${encodeURIComponent(filterValue)}`);
+    setOpen(false);
+  };
+
   return(
     <html className="font-[Aptos] text-[#333] min-h-screen flex flex-col color-black" lang="fr">
       <body className="bg-[#f5f8fc] flex flex-col min-h-screen">
         
-        {/* On englobe tout le site dans le AuthProvider */}
         <AuthProvider>
           
-          {/* Header */}
           <header 
             className="fixed w-full flex justify-between items-center px-[30px] py-[10px] bg-white border-b border-[#dce3eb] bg-[url('/banniere-patisserie.png')] bg-center bg-cover h-[100px] z-[2000]"
             style={{boxSizing: "border-box"}}
           >
-             {/* Header Left */}
-            <div className="text-[20px] text-[#333] px-[10px] py-[5px] rounded-[5px] bg-[#FFFCEE] flex items-center">
+             <div className="text-[20px] text-[#333] px-[10px] py-[5px] rounded-[5px] bg-[#FFFCEE] flex items-center">
               <button 
                 className="px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]"
                 onClick={() => setOpen(!open)}
@@ -83,7 +85,6 @@ export default function RootLayout({
               <Link href="/" className="mx-[10px] font-bold italic">Cooking.com</Link>
             </div>
 
-            {/* Header Center */}
             <div className="text-[20px] text-[#333] px-[10px] py-[5px] rounded-[5px] bg-[#FFFCEE]">
               <form onSubmit={handleSearch} className="flex items-center">
                 <input 
@@ -99,33 +100,115 @@ export default function RootLayout({
               </form>
             </div>
 
-            {/* Header Right */}
             <div className="text-[20px] text-[#333] px-[10px] py-[5px] rounded-[5px] bg-[#FFFCEE] flex gap-3">
               <Link href="/notrehistoire" className="mx-[10px] font-bold italic self-center">
                 Notre histoire
               </Link>
               
-              {/* C'est ici que */}
               <HeaderButtons />
-
             </div>  
           </header>
 
-          {/* Menu déroulant */}
+          {/* Menu déroulant avec les VRAIES valeurs de votre BDD */}
           <nav className={`fixed left-0 w-full bg-[#fff3e0] shadow-[0_4px_10px_rgba(0,0,0,0.1)] py-[20px] flex justify-around transition-top duration-700 z-[999] ${
             open ? "top-[100px]" : "top-[-50vh]"
           }`}>
-             <div><h3 className="mb-2">Recettes par catégorie</h3><p className="cursor-pointer hover:text-[#f4a887]">Apéro</p><p className="cursor-pointer hover:text-[#f4a887]">Entrées</p><p className="cursor-pointer hover:text-[#f4a887]">Plats</p><p className="cursor-pointer hover:text-[#f4a887]">Desserts</p></div>
-             <div><h3 className="mb-2">Recettes par fête</h3><p className="cursor-pointer hover:text-[#f4a887]">Nouvel an</p><p className="cursor-pointer hover:text-[#f4a887]">Noël</p><p className="cursor-pointer hover:text-[#f4a887]">Pâques</p><p className="cursor-pointer hover:text-[#f4a887]">Anniversaire</p></div>
-             <div><h3 className="mb-2">Recettes du monde</h3><p className="cursor-pointer hover:text-[#f4a887]">Italiennes</p><p className="cursor-pointer hover:text-[#f4a887]">Japonaises</p><p className="cursor-pointer hover:text-[#f4a887]">Indiennes</p><p className="cursor-pointer hover:text-[#f4a887]">Françaises</p><br /><Link href="/articles" className="mx-[10px]"><h4 className="hover:text-[#f4a887]">Tout</h4></Link></div>
+            {/* Recettes par catégorie - VALEURS CORRIGÉES */}
+            <div>
+              <h3 className="mb-2 font-semibold">Recettes par catégorie</h3>
+              <p 
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('categorie', 'apéro')}
+              >
+                Apéro
+              </p>
+              <p 
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('categorie', 'entrée')}
+              >
+                Entrées
+              </p>
+              <p 
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('categorie', 'plat')}
+              >
+                Plats
+              </p>
+              <p 
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('categorie', 'dessert')}
+              >
+                Desserts
+              </p>
+            </div>
+
+            {/* Recettes par fête - VALEURS CORRIGÉES */}
+            <div>
+              <h3 className="mb-2 font-semibold">Recettes par fête</h3>
+              <p 
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('fete', 'nouvel an')}
+              >
+                Nouvel an
+              </p>
+              <p 
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('fete', 'noel')}
+              >
+                Noël
+              </p>
+              <p 
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('fete', 'paques')}
+              >
+                Pâques
+              </p>
+              <p 
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('fete', 'anniversaire')}
+              >
+                Anniversaire
+              </p>
+            </div>
+
+            {/* Recettes du monde - VALEURS CORRIGÉES */}
+            <div>
+              <h3 className="mb-2 font-semibold">Recettes du monde</h3>
+              <p 
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('origine', 'française')}
+              >
+                Françaises
+              </p>
+              <p 
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('origine', 'japonaise')}
+              >
+                Japonaises
+              </p>
+              <p
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('origine', 'italienne')}
+              >
+                Italiennes
+              </p>
+              <p 
+                className="cursor-pointer hover:text-[#f4a887] transition-colors py-1"
+                onClick={() => handleFilter('origine', 'indienne')}
+              >
+                Indiennes
+              </p>
+              <br />
+              <Link href="/articles" className="mx-[10px]">
+                <h4 className="hover:text-[#f4a887] transition-colors py-1">Toutes les recettes</h4>
+              </Link>
+            </div>
           </nav>
 
-          {/* Main Content */}
           <main className="flex-1 mt-[100px] pb-[80px]">
             {children}
           </main>
 
-          {/* Footer */}
           <footer className="text-center text-[13px] text-[#777] py-[15px] border-t border-[#dce3eb] bg-white relative z-[100] mt-auto">
             Copyright © 2025 Cooking aka le meilleur site de nourriture du monde
           </footer>
