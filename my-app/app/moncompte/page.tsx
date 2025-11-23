@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/supabase/client";
 import Link from "next/link";
@@ -13,6 +15,7 @@ interface UserData {
   password: string;
 }
 
+
 // Définir le type pour les searchParams
 interface SearchParams {
   search?: string;
@@ -20,6 +23,7 @@ interface SearchParams {
   fete?: string;
   origine?: string;
 }
+
 
 interface Recipe {
   id: string;
@@ -31,7 +35,10 @@ interface Recipe {
   difficulte: string;
   ingredient: string;
   preparation: string;
-  images?: string;
+  // URL stored in the DB (may be null if no image)
+  images?: string | null;
+  // Local file selected in the editor (optional, not persisted directly to DB)
+  image?: File | null;
 }
 
 interface SavedRecipe {
@@ -45,7 +52,7 @@ interface Comment {
   contenu: string;
   created_at: string;
   recette: {
-    id: number; 
+    id: number | string;
     nom: string;
   };
 }
@@ -222,7 +229,15 @@ const AccountSettings = () => {
         console.error("Erreur récupération recettes enregistrées:", savedRecipesError.message);
         setSavedRecipes([]);
       } else {
-        setSavedRecipes(savedRecipesData || []);
+        const normalized = (savedRecipesData || []).map((s: any) => {
+          const recetteObj = Array.isArray(s.recette) ? s.recette[0] : s.recette;
+          return {
+            id: s.id,
+            created_at: s.created_at,
+            recette: recetteObj
+          } as SavedRecipe;
+        }).filter((s: SavedRecipe) => !!s.recette);
+        setSavedRecipes(normalized);
       }
     } catch (error) {
       console.error("Erreur lors du chargement des recettes enregistrées:", error);
@@ -247,7 +262,17 @@ const AccountSettings = () => {
         .order("created_at", { ascending: false });
 
       if (!commentsError && userComments) {
-        setComments(userComments);
+        // Normaliser la forme renvoyée par Supabase : recette peut être un tableau ou un objet
+        const normalized: Comment[] = (userComments || []).map((c: any) => {
+          const recetteObj = Array.isArray(c.recette) ? c.recette[0] : c.recette;
+          return {
+            id: c.id,
+            contenu: c.contenu,
+            created_at: c.created_at,
+            recette: recetteObj || { id: "", nom: "Recette inconnue" },
+          } as Comment;
+        });
+        setComments(normalized);
       } else {
         console.error("Erreur récupération commentaires:", commentsError);
         setComments([]);
