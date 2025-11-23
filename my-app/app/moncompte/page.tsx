@@ -34,6 +34,20 @@ const AccountSettings = () => {
     password: "",
   });
 
+  // États pour la gestion des recettes
+  const [showAddRecipeForm, setShowAddRecipeForm] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState<any>(null);
+  const [newRecipe, setNewRecipe] = useState({
+    nom: "",
+    ingredient: "",
+    temps_preparation: "",
+    preparation: "",
+    categorie: "",
+    fete: "",
+    origine: "",
+    difficulte: "faible"
+  });
+
   // Classe boutons (utiliser le style fourni)
   const primaryBtn =
     "px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#FFFCEE]";
@@ -81,8 +95,10 @@ const AccountSettings = () => {
         setUserData(userInfos);
         setEditedData(userInfos);
 
-        // Simuler le chargement des données utilisateur (à remplacer par vos appels API réels)
-        setPublishedRecipes([]); // Aucune recette publiée
+        // Charger les recettes de l'utilisateur
+        await fetchUserRecipes(user.id);
+
+        // Simuler le chargement des autres données utilisateur
         setSavedRecipes([]); // Aucune recette enregistrée
         setComments([]); // Aucun commentaire
 
@@ -96,7 +112,160 @@ const AccountSettings = () => {
     fetchUserData();
   }, []);
 
-  // Sauvegarde des données
+  // Fonction pour récupérer les recettes de l'utilisateur
+  const fetchUserRecipes = async (userId: string) => {
+    try {
+      const { data: userRecipes, error: recipesError } = await supabase
+        .from("recette")
+        .select("id, nom, temps_preparation, categorie, fete, origine, ingredient, preparation, difficulte")
+        .eq("proprietaire_id", userId);
+
+      if (recipesError) {
+        console.error("Erreur récupération recettes:", recipesError.message);
+        setPublishedRecipes([]);
+      } else {
+        // Récupération des photos pour chaque recette publiée
+        if (userRecipes && userRecipes.length > 0) {
+          const recipesWithPhotos = await Promise.all(
+            userRecipes.map(async (recipe) => {
+              const { data: photos } = await supabase
+                .from("photo")
+                .select("url_photo")
+                .eq("id_recette", recipe.id)
+                .limit(1);
+
+              return {
+                ...recipe,
+                photoUrl: photos && photos.length > 0 ? photos[0].url_photo : null
+              };
+            })
+          );
+          setPublishedRecipes(recipesWithPhotos);
+        } else {
+          setPublishedRecipes([]);
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des recettes:", error);
+    }
+  };
+
+  // AJOUTER UNE RECETTE
+  const handleAddRecipe = async () => {
+    if (!userId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("recette")
+        .insert([
+          {
+            nom: newRecipe.nom,
+            ingredient: newRecipe.ingredient,
+            temps_preparation: newRecipe.temps_preparation,
+            preparation: newRecipe.preparation,
+            categorie: newRecipe.categorie,
+            fete: newRecipe.fete,
+            origine: newRecipe.origine,
+            difficulte: newRecipe.difficulte,
+            proprietaire_id: userId // L'ID de l'utilisateur connecté
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+
+      // Recharger les recettes
+      await fetchUserRecipes(userId);
+      
+      // Réinitialiser le formulaire
+      setNewRecipe({
+        nom: "",
+        ingredient: "",
+        temps_preparation: "",
+        preparation: "",
+        categorie: "",
+        fete: "",
+        origine: "",
+        difficulte: "faible"
+      });
+      setShowAddRecipeForm(false);
+      
+      alert("Recette ajoutée avec succès !");
+
+    } catch (error: any) {
+      console.error("Erreur lors de l'ajout:", error);
+      alert(`Erreur : ${error.message || "Impossible d'ajouter la recette"}`);
+    }
+  };
+
+  // MODIFIER UNE RECETTE
+  const handleEditRecipe = async () => {
+    if (!editingRecipe) return;
+
+    try {
+      const { error } = await supabase
+        .from("recette")
+        .update({
+          nom: editingRecipe.nom,
+          ingredient: editingRecipe.ingredient,
+          temps_preparation: editingRecipe.temps_preparation,
+          preparation: editingRecipe.preparation,
+          categorie: editingRecipe.categorie,
+          fete: editingRecipe.fete,
+          origine: editingRecipe.origine,
+          difficulte: editingRecipe.difficulte
+        })
+        .eq("id", editingRecipe.id);
+
+      if (error) throw error;
+
+      // Recharger les recettes
+      if (userId) await fetchUserRecipes(userId);
+      setEditingRecipe(null);
+      
+      alert("Recette modifiée avec succès !");
+
+    } catch (error: any) {
+      console.error("Erreur lors de la modification:", error);
+      alert(`Erreur : ${error.message || "Impossible de modifier la recette"}`);
+    }
+  };
+
+  // SUPPRIMER UNE RECETTE
+  const handleDeleteRecipe = async (recipeId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette recette ?")) return;
+
+    try {
+      // D'abord supprimer les photos associées
+      const { error: photosError } = await supabase
+        .from("photo")
+        .delete()
+        .eq("id_recette", recipeId);
+
+      if (photosError) {
+        console.error("Erreur suppression photos:", photosError);
+      }
+
+      // Puis supprimer la recette
+      const { error } = await supabase
+        .from("recette")
+        .delete()
+        .eq("id", recipeId);
+
+      if (error) throw error;
+
+      // Recharger les recettes
+      if (userId) await fetchUserRecipes(userId);
+      
+      alert("Recette supprimée avec succès !");
+
+    } catch (error: any) {
+      console.error("Erreur lors de la suppression:", error);
+      alert(`Erreur : ${error.message || "Impossible de supprimer la recette"}`);
+    }
+  };
+
+  // Sauvegarde des données du profil
   const handleSaveProfile = async () => {
     if (!userId) return;
 
@@ -515,19 +684,184 @@ const AccountSettings = () => {
           <section className="mb-10 mx-[10px]">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-[#333]">Vos recettes publiées</h2>
-              <button className={primaryBtn}>Ajouter une recette</button>
+              <button 
+                className={primaryBtn} 
+                onClick={() => setShowAddRecipeForm(true)}
+              >
+                Ajouter une recette
+              </button>
             </div>
 
+            {/* Formulaire d'ajout de recette */}
+            {showAddRecipeForm && (
+              <div className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6">
+                <h3 className="text-xl font-semibold mb-4">Nouvelle recette</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    placeholder="Nom de la recette"
+                    value={newRecipe.nom}
+                    onChange={(e) => setNewRecipe({...newRecipe, nom: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Temps de préparation (min)"
+                    value={newRecipe.temps_preparation}
+                    onChange={(e) => setNewRecipe({...newRecipe, temps_preparation: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  />
+                  <select
+                    value={newRecipe.categorie}
+                    onChange={(e) => setNewRecipe({...newRecipe, categorie: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  >
+                    <option value="">Catégorie</option>
+                    <option value="apéro">Apéro</option>
+                    <option value="entrée">Entrée</option>
+                    <option value="plat">Plat</option>
+                    <option value="dessert">Dessert</option>
+                  </select>
+                  <select
+                    value={newRecipe.difficulte}
+                    onChange={(e) => setNewRecipe({...newRecipe, difficulte: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  >
+                    <option value="faible">Facile</option>
+                    <option value="modéré">Moyen</option>
+                    <option value="difficile">Difficile</option>
+                  </select>
+                  <textarea
+                    placeholder="Ingrédients"
+                    value={newRecipe.ingredient}
+                    onChange={(e) => setNewRecipe({...newRecipe, ingredient: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
+                    rows={3}
+                  />
+                  <textarea
+                    placeholder="Préparation"
+                    value={newRecipe.preparation}
+                    onChange={(e) => setNewRecipe({...newRecipe, preparation: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <button className={primaryBtn} onClick={handleAddRecipe}>
+                    Ajouter
+                  </button>
+                  <button className={secondaryBtn} onClick={() => setShowAddRecipeForm(false)}>
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Formulaire de modification de recette */}
+            {editingRecipe && (
+              <div className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6">
+                <h3 className="text-xl font-semibold mb-4">Modifier la recette</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    placeholder="Nom de la recette"
+                    value={editingRecipe.nom}
+                    onChange={(e) => setEditingRecipe({...editingRecipe, nom: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Temps de préparation (min)"
+                    value={editingRecipe.temps_preparation}
+                    onChange={(e) => setEditingRecipe({...editingRecipe, temps_preparation: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  />
+                  <select
+                    value={editingRecipe.categorie}
+                    onChange={(e) => setEditingRecipe({...editingRecipe, categorie: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  >
+                    <option value="">Catégorie</option>
+                    <option value="apéro">Apéro</option>
+                    <option value="entrée">Entrée</option>
+                    <option value="plat">Plat</option>
+                    <option value="dessert">Dessert</option>
+                  </select>
+                  <select
+                    value={editingRecipe.difficulte}
+                    onChange={(e) => setEditingRecipe({...editingRecipe, difficulte: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                  >
+                    <option value="faible">Facile</option>
+                    <option value="modéré">Moyen</option>
+                    <option value="difficile">Difficile</option>
+                  </select>
+                  <textarea
+                    placeholder="Ingrédients"
+                    value={editingRecipe.ingredient}
+                    onChange={(e) => setEditingRecipe({...editingRecipe, ingredient: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
+                    rows={3}
+                  />
+                  <textarea
+                    placeholder="Préparation"
+                    value={editingRecipe.preparation}
+                    onChange={(e) => setEditingRecipe({...editingRecipe, preparation: e.target.value})}
+                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <button className={primaryBtn} onClick={handleEditRecipe}>
+                    Modifier
+                  </button>
+                  <button className={secondaryBtn} onClick={() => setEditingRecipe(null)}>
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Liste des recettes */}
             {publishedRecipes.length > 0 ? (
               <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
-                {publishedRecipes.map((recipe, index) => (
-                  <div key={index} className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
-                    <div className="mb-4">
-                      <h3 className="text-[#333] mb-4">{recipe.title}</h3>
+                {publishedRecipes.map((recipe) => (
+                  <div key={recipe.id} className="bg-white p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] text-center mx-[5px] my-[5px]">
+                    {/* Image de la recette */}
+                    <div className="bg-[#FFFFFF] h-[140px] mb-4">
+                      {recipe.photoUrl ? (
+                        <img 
+                          src={recipe.photoUrl} 
+                          alt={recipe.nom}
+                          className="w-full h-full object-cover rounded-[5px]"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 flex items-center justify-center rounded-[5px]">
+                          <span className="text-gray-500 text-sm">Pas d'image</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex gap-3">
-                      <button className={`${dangerBtn} flex-1`}>Supprimer</button>
-                      <button className={`${primaryBtn} flex-1`}>Modifier</button>
+                    
+                    <h3 className="text-lg font-semibold text-[#333] mb-3">{recipe.nom}</h3>
+                    <p className="text-[13px] text-[#555] mb-3">
+                      Temps : {recipe.temps_preparation} min
+                    </p>
+                    {recipe.categorie && (
+                      <p className="text-[12px] text-[#777] mb-2">Catégorie: {recipe.categorie}</p>
+                    )}
+                    <div className="flex gap-3 mt-4">
+                      <button 
+                        className={`${dangerBtn} flex-1`} 
+                        onClick={() => handleDeleteRecipe(recipe.id)}
+                      >
+                        Supprimer
+                      </button>
+                      <button 
+                        className={`${primaryBtn} flex-1`} 
+                        onClick={() => setEditingRecipe(recipe)}
+                      >
+                        Modifier
+                      </button>
                     </div>
                   </div>
                 ))}
