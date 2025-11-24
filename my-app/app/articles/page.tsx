@@ -1,20 +1,27 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/supabase/client.js";
 
 
-
-export default function ArticlesPage({ searchParams }: PageProps) {
-  const searchQuery = searchParams.search || "";
-  const categorie = searchParams.categorie || "";
-  const fete = searchParams.fete || "";
-  const origine = searchParams.origine || "";
+// Composant principal qui utilise useSearchParams
+function ArticlesContent() {
+  const searchParams = useSearchParams();
+  
+  const search = searchParams.get('search') || "";
+  const categorie = searchParams.get('categorie') || "";
+  const fete = searchParams.get('fete') || "";
+  const origine = searchParams.get('origine') || "";
+ 
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [recettes, setRecettes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  console.log("🔍 Paramètres de filtrage:", { searchQuery, categorie, fete, origine });
+  console.log("🔍 Paramètres de filtrage:", { search, categorie, fete, origine });
 
-  // Gestion du mode sombre (identique à votre autre page)
+  // Gestion du mode sombre
   useEffect(() => {
     const checkDarkMode = () => {
       const darkThemeSelected = localStorage.getItem('selectedTheme') === 'sombre';
@@ -40,10 +47,6 @@ export default function ArticlesPage({ searchParams }: PageProps) {
   }, []);
 
   // Récupération des recettes avec filtres
-  const [recettes, setRecettes] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     const fetchRecettes = async () => {
       try {
@@ -52,8 +55,8 @@ export default function ArticlesPage({ searchParams }: PageProps) {
           .from("recette")
           .select("id, nom, temps_preparation, categorie, fete, origine, difficulte, images");
 
-        if (searchQuery) {
-          query = query.ilike("nom", `%${searchQuery}%`);
+        if (search) {
+          query = query.ilike("nom", `%${search}%`);
         }
         if (categorie) {
           query = query.eq("categorie", categorie);
@@ -84,15 +87,15 @@ export default function ArticlesPage({ searchParams }: PageProps) {
     };
 
     fetchRecettes();
-  }, [searchQuery, categorie, fete, origine]);
+  }, [search, categorie, fete, origine]);
 
   // Utiliser directement les recettes avec la colonne images
   const recettesWithImages = recettes || [];
 
   // Fonction pour générer le titre selon le filtre actif
   const getPageTitle = () => {
-    if (searchQuery) {
-      return <>Nos recettes pour <span className="font-bold text-[#f4a887] italic">"{searchQuery}"</span></>;
+    if (search) {
+      return <>Nos recettes pour <span className="font-bold text-[#f4a887] italic">"{search}"</span></>;
     }
     if (categorie) {
       return <>Recettes : <span className="font-bold text-[#f4a887] italic">{categorie}</span></>;
@@ -107,12 +110,15 @@ export default function ArticlesPage({ searchParams }: PageProps) {
   };
 
   // Vérifier si un filtre est actif
-  const hasActiveFilter = searchQuery || categorie || fete || origine;
+  const hasActiveFilter = search || categorie || fete || origine;
 
   if (isLoading) return (
     <div className={`my-[30px] min-h-screen flex justify-center pt-32 transition-colors duration-300 ${
       isDarkMode ? "bg-[#111827] text-[#FFFFFF]" : "bg-[#f5f8fc] text-[#333333]"}`}>
-      Chargement...
+      <div className="flex flex-col items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f4a887] mb-4"></div>
+        <p>Chargement des recettes...</p>
+      </div>
     </div>
   );
 
@@ -120,7 +126,16 @@ export default function ArticlesPage({ searchParams }: PageProps) {
     return (
       <div className={`my-[30px] min-h-screen flex justify-center pt-32 transition-colors duration-300 ${
         isDarkMode ? "bg-[#111827] text-[#FFFFFF]" : "bg-[#f5f8fc] text-[#333333]"}`}>
-        <p>Erreur lors du chargement des recettes 😢</p>
+        <div className="text-center">
+          <p className="text-lg mb-4">Erreur lors du chargement des recettes 😢</p>
+          <p className="text-sm opacity-75 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-[#f4a887] text-[#333333] rounded-[5px] hover:bg-[#FB923C] transition-colors"
+          >
+            Réessayer
+          </button>
+        </div>
       </div>
     );
   }
@@ -205,18 +220,23 @@ export default function ArticlesPage({ searchParams }: PageProps) {
                       src={recette.images} 
                       alt={recette.nom}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback si l'image ne charge pas
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
                     />
-                  ) : (
-                    <div className={`w-full h-full bg-gradient-to-br flex items-center justify-center transition-colors duration-300 ${
-                      isDarkMode 
-                        ? "from-[#4B5563] to-[#374151]" 
-                        : "from-[#FFFFFF] to-[#EEEEEE]"
-                    }`}>
-                      <span className={`italic ${
-                        isDarkMode ? "text-[#9CA3AF]" : "text-[#6B7280]"
-                      }`}>Pas d'image</span>
-                    </div>
-                  )}
+                  ) : null}
+                  <div className={`w-full h-full bg-gradient-to-br flex items-center justify-center transition-colors duration-300 ${
+                    isDarkMode 
+                      ? "from-[#4B5563] to-[#374151]" 
+                      : "from-[#FFFFFF] to-[#EEEEEE]"
+                  } ${recette.images ? 'hidden' : ''}`}>
+                    <span className={`italic ${
+                      isDarkMode ? "text-[#9CA3AF]" : "text-[#6B7280]"
+                    }`}>Pas d'image</span>
+                  </div>
                 </div>
 
                 {/* Contenu de la carte */}
@@ -252,5 +272,21 @@ export default function ArticlesPage({ searchParams }: PageProps) {
         </div>
       </main>
     </div>
+  );
+}
+
+// Composant de page principal avec Suspense
+export default function ArticlesPage() {
+  return (
+    <Suspense fallback={
+      <div className="my-[30px] min-h-screen flex justify-center pt-32 bg-[#f5f8fc]">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f4a887] mb-4"></div>
+          <p>Chargement...</p>
+        </div>
+      </div>
+    }>
+      <ArticlesContent />
+    </Suspense>
   );
 }
