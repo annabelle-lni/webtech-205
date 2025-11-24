@@ -1,59 +1,101 @@
-import React from "react";
+"use client";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/supabase/client.js";
 
-export default async function ArticlesPage(props: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  // Méthode 1 : Utiliser await directement
-  const searchParams = await props.searchParams;
-  
-  // Extraire les paramètres avec des valeurs par défaut
-  const searchQuery = (searchParams.search as string) || "";
-  const categorie = (searchParams.categorie as string) || "";
-  const fete = (searchParams.fete as string) || "";
-  const origine = (searchParams.origine as string) || "";
 
-  console.log("🔍 Paramètres de filtrage:", { searchQuery, categorie, fete, origine });
+// Composant principal qui utilise useSearchParams
+function ArticlesContent() {
+  const searchParams = useSearchParams();
+  
+  const search = searchParams.get('search') || "";
+  const categorie = searchParams.get('categorie') || "";
+  const fete = searchParams.get('fete') || "";
+  const origine = searchParams.get('origine') || "";
+ 
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [recettes, setRecettes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  console.log("🔍 Paramètres de filtrage:", { search, categorie, fete, origine });
+
+  // Gestion du mode sombre
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const darkThemeSelected = localStorage.getItem('selectedTheme') === 'sombre';
+      const hasDarkClass = document.documentElement.classList.contains('dark-theme');
+      const isDarkBody = document.body.style.backgroundColor === '#1a1a1a';
+      setIsDarkMode(darkThemeSelected || hasDarkClass || isDarkBody);
+    };
+
+    checkDarkMode();
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class' || mutation.attributeName === 'style') {
+          checkDarkMode();
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+    observer.observe(document.body, { attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Récupération des recettes avec filtres
-  let query = supabase
-    .from("recette")
-    .select("id, nom, temps_preparation, categorie, fete, origine, difficulte, images");
+  useEffect(() => {
+    const fetchRecettes = async () => {
+      try {
+        setIsLoading(true);
+        let query = supabase
+          .from("recette")
+          .select("id, nom, temps_preparation, categorie, fete, origine, difficulte, images");
 
-  // Appliquer les filtres selon les paramètres
-  if (searchQuery) {
-    query = query.ilike("nom", `%${searchQuery}%`);
-  }
-  if (categorie) {
-    query = query.eq("categorie", categorie);
-  }
-  if (fete) {
-    query = query.eq("fete", fete);
-  }
-  if (origine) {
-    query = query.eq("origine", origine);
-  }
+        if (search) {
+          query = query.ilike("nom", `%${search}%`);
+        }
+        if (categorie) {
+          query = query.eq("categorie", categorie);
+        }
+        if (fete) {
+          query = query.eq("fete", fete);
+        }
+        if (origine) {
+          query = query.eq("origine", origine);
+        }
 
-  const { data: recettes, error } = await query;
+  const { data, error } = await query;
 
-  if (error) {
-    console.error("❌ Erreur de récupération des recettes :", error.message);
-    return <p>Erreur lors du chargement des recettes 😢</p>;
-  }
+        if (error) {
+          console.error("❌ Erreur de récupération des recettes :", error.message);
+          setError(error.message);
+          return;
+        }
 
-  console.log("📊 Recettes trouvées:", recettes?.length);
-  if (recettes && recettes.length > 0) {
-    console.log("📝 Exemple de recette:", recettes[0]);
-  }
+        console.log("📊 Recettes trouvées:", data?.length);
+        setRecettes(data || []);
+      } catch (err) {
+        console.error("Erreur:", err);
+        setError("Erreur lors du chargement des recettes");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRecettes();
+  }, [search, categorie, fete, origine]);
 
   // Utiliser directement les recettes avec la colonne images
   const recettesWithImages = recettes || [];
 
   // Fonction pour générer le titre selon le filtre actif
   const getPageTitle = () => {
-    if (searchQuery) {
-      return <>Nos recettes pour <span className="font-bold text-[#f4a887] italic">"{searchQuery}"</span></>;
+    if (search) {
+      return <>Nos recettes pour <span className="font-bold text-[#f4a887] italic">"{search}"</span></>;
     }
     if (categorie) {
       return <>Recettes : <span className="font-bold text-[#f4a887] italic">{categorie}</span></>;
@@ -68,7 +110,35 @@ export default async function ArticlesPage(props: {
   };
 
   // Vérifier si un filtre est actif
-  const hasActiveFilter = searchQuery || categorie || fete || origine;
+  const hasActiveFilter = search || categorie || fete || origine;
+
+  if (isLoading) return (
+    <div className={`my-[30px] min-h-screen flex justify-center pt-32 transition-colors duration-300 ${
+      isDarkMode ? "bg-[#111827] text-[#FFFFFF]" : "bg-[#f5f8fc] text-[#333333]"}`}>
+      <div className="flex flex-col items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f4a887] mb-4"></div>
+        <p>Chargement des recettes...</p>
+      </div>
+    </div>
+  );
+
+  if (error) {
+    return (
+      <div className={`my-[30px] min-h-screen flex justify-center pt-32 transition-colors duration-300 ${
+        isDarkMode ? "bg-[#111827] text-[#FFFFFF]" : "bg-[#f5f8fc] text-[#333333]"}`}>
+        <div className="text-center">
+          <p className="text-lg mb-4">Erreur lors du chargement des recettes 😢</p>
+          <p className="text-sm opacity-75 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-[#f4a887] text-[#333333] rounded-[5px] hover:bg-[#FB923C] transition-colors"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main
@@ -120,28 +190,45 @@ export default async function ArticlesPage(props: {
         </div>
       )}
 
-      {/* Grille des recettes */}
-      <div className="my-12 mx-auto grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-8 items-start w-[calc(100%-80px)] max-w-[1100px] box-border justify-items-center">
-        {recettesWithImages.length > 0 ? (
-          recettesWithImages.map((recette) => (
-            <div 
-              key={recette.id} 
-              className="my-[10px] bg-[#FFFCEE] rounded-[5px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] w-[250px] overflow-hidden text-left my-4"
-            >
-              {/* Image de la recette : utilisation de recette.images */}
-              <div className="bg-[#FFFFFF] h-[140px]">
-                {recette.images ? (
-                  <img 
-                    src={recette.images} 
-                    alt={recette.nom}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#FFFFFF] to-[#EEEEEE] flex items-center justify-center">
-                    <span className="italic">Pas d'image</span>
+        {/* Grille des recettes */}
+        <div className="my-12 mx-auto grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-8 items-start w-[calc(100%-80px)] max-w-[1100px] box-border justify-items-center">
+          {recettesWithImages.length > 0 ? (
+            recettesWithImages.map((recette) => (
+              <div 
+                key={recette.id} 
+                className={`my-[10px] rounded-[5px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] w-[250px] overflow-hidden text-left my-4 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? "bg-[#374151] shadow-[0_1px_3px_rgba(0,0,0,0.3)]" 
+                    : "bg-[#FFFCEE]"
+                }`}
+              >
+                {/* Image de la recette */}
+                <div className={`h-[140px] transition-colors duration-300 ${
+                  isDarkMode ? "bg-[#4B5563]" : "bg-[#FFFFFF]"
+                }`}>
+                  {recette.images ? (
+                    <img 
+                      src={recette.images} 
+                      alt={recette.nom}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback si l'image ne charge pas
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <div className={`w-full h-full bg-gradient-to-br flex items-center justify-center transition-colors duration-300 ${
+                    isDarkMode 
+                      ? "from-[#4B5563] to-[#374151]" 
+                      : "from-[#FFFFFF] to-[#EEEEEE]"
+                  } ${recette.images ? 'hidden' : ''}`}>
+                    <span className={`italic ${
+                      isDarkMode ? "text-[#9CA3AF]" : "text-[#6B7280]"
+                    }`}>Pas d'image</span>
                   </div>
-                )}
-              </div>
+                </div>
 
               {/* Contenu de la carte */}
               <div className="p-5 bg-[#FFFCEE]">
@@ -153,17 +240,33 @@ export default async function ArticlesPage(props: {
                   Difficulté : {recette.difficulte}
                 </p>
 
-                <Link 
-                  href={`/articles/${recette.id}`} 
-                  className="inline-block text-[13px] text-[#f4a887] no-underline hover:underline"
-                >
-                  Voir la recette →
-                </Link>
+                  <Link 
+                    href={`/articles/${recette.id}`} 
+                    className="inline-block text-[13px] text-[#f4a887] hover:text-[#FB923C] no-underline hover:underline transition-colors duration-200"
+                  >
+                    Voir la recette →
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))
-        ) : null}
+            ))
+          ) : null}
+        </div>
+      </main>
+  );
+}
+
+// Composant de page principal avec Suspense
+export default function ArticlesPage() {
+  return (
+    <Suspense fallback={
+      <div className="my-[30px] min-h-screen flex justify-center pt-32 bg-[#f5f8fc]">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f4a887] mb-4"></div>
+          <p>Chargement...</p>
+        </div>
       </div>
-    </main>
+    }>
+      <ArticlesContent />
+    </Suspense>
   );
 }
