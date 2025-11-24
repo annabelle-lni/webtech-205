@@ -1,8 +1,8 @@
 "use client";
-
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/supabase/client";
 import Link from "next/link";
+import { useTheme } from "@/hooks/useTheme";
 
 export const dynamic = "force-dynamic";
 
@@ -13,15 +13,6 @@ interface UserData {
   lastName: string;
   email: string;
   password: string;
-}
-
-
-// Définir le type pour les searchParams
-interface SearchParams {
-  search?: string;
-  categorie?: string;
-  fete?: string;
-  origine?: string;
 }
 
 
@@ -245,43 +236,50 @@ const AccountSettings = () => {
   }, []);
 
   // FONCTION POUR CHARGER LES COMMENTAIRES
-  const loadUserComments = useCallback(async (userId: string) => {
-    try {
-      const { data: userComments, error: commentsError } = await supabase
-        .from("commentaire")
-        .select(`
-          id, 
-          contenu, 
-          created_at, 
-          recette:recette_id(
-            id,
-            nom
-          )
-        `)
-        .eq("proprietaire_id", userId)
-        .order("created_at", { ascending: false });
+const loadUserComments = useCallback(async (userId: string) => {
+  try {
+    console.log("Chargement des commentaires écrits PAR l'utilisateur:", userId);
 
-      if (!commentsError && userComments) {
-        // Normaliser la forme renvoyée par Supabase : recette peut être un tableau ou un objet
-        const normalized: Comment[] = (userComments || []).map((c: any) => {
-          const recetteObj = Array.isArray(c.recette) ? c.recette[0] : c.recette;
-          return {
-            id: c.id,
-            contenu: c.contenu,
-            created_at: c.created_at,
-            recette: recetteObj || { id: "", nom: "Recette inconnue" },
-          } as Comment;
-        });
-        setComments(normalized);
-      } else {
-        console.error("Erreur récupération commentaires:", commentsError);
-        setComments([]);
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement des commentaires:", error);
+    const { data: userComments, error: commentsError } = await supabase
+      .from("commentaire")
+      .select(`
+        id, 
+        contenu, 
+        created_at, 
+        recette:id_recette(
+          id,
+          nom
+        )
+      `)
+      .eq("proprietaire_id", userId)
+      .order("created_at", { ascending: false });
+
+    console.log("Commentaires écrits PAR l'utilisateur:", userComments);
+    console.log("Erreur commentaires:", commentsError);
+
+    if (!commentsError && userComments) {
+      const normalized: Comment[] = (userComments || []).map((c: any) => {
+        const recetteObj = Array.isArray(c.recette) ? c.recette[0] : c.recette;
+        console.log("Commentaire normalisé:", c.id, recetteObj);
+        return {
+          id: c.id,
+          contenu: c.contenu,
+          created_at: c.created_at,
+          recette: recetteObj || { id: "", nom: "Recette inconnue" },
+        } as Comment;
+      });
+      setComments(normalized);
+      console.log("Commentaires normalisés:", normalized);
+    } else {
+      console.error("Erreur récupération commentaires:", commentsError);
       setComments([]);
     }
-  }, [supabase]);
+  } catch (error) {
+    console.error("Erreur lors du chargement des commentaires:", error);
+    setComments([]);
+  }
+}, [supabase]);
+
 
   // FONCTION POUR UPLOADER L'IMAGE
   const uploadRecipeImage = useCallback(async (file: File) => {
@@ -1158,6 +1156,9 @@ const AccountSettings = () => {
                           minute: '2-digit'
                         })}
                       </p>
+                      <div className="mb-4">
+  
+</div>
                       {comment.recette && (
   <Link 
     href={`/articles/${comment.recette.id}`}  // Ici comment.recette.id est maintenant un number
