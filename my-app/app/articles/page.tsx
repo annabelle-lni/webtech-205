@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/supabase/client.js";
 
+
 // Composant principal qui utilise useSearchParams
 function ArticlesContent() {
   const searchParams = useSearchParams();
@@ -12,7 +13,7 @@ function ArticlesContent() {
   const categorie = searchParams.get('categorie') || "";
   const fete = searchParams.get('fete') || "";
   const origine = searchParams.get('origine') || "";
-  
+ 
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [recettes, setRecettes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
