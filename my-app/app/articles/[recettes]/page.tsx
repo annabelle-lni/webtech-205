@@ -3,6 +3,10 @@ import { useState, useEffect, use } from "react";
 import { supabase } from "@/supabase/client";
 import { useRouter } from "next/navigation";
 
+//----
+//Malgré les paramètres le mode sombre ne s'applique pas correctement 
+//----
+
 type PageProps = {
   params: Promise<{
     recettes: string;
@@ -205,6 +209,7 @@ export default function RecettePage({ params }: PageProps) {
   }
 };
 
+  {/*Espace --- Suppression commentaire*/}
   const handleDeleteComment = async (id: string) => {
     if (!confirm("Supprimer ce commentaire ?")) return;
     try {
@@ -217,15 +222,18 @@ export default function RecettePage({ params }: PageProps) {
     }
   };
 
+  {/*Espace --- Chargement*/}
   if (isLoading) return (
-    <div className={`my-[30px] min-h-screen flex justify-center pt-32 transition-colors duration-300 ${
+    <div className={`my-[30px] flex justify-center ${
+      //permet d'avoir un "Chargement..." centré pendant le chargement 
       isDarkMode ? "bg-[#111827] text-[#FFFFFF]" : "bg-[#f5f8fc] text-[#333333]"}`}>
       Chargement...
     </div>
   );
 
+  {/*Espace --- Recette introuvable*/}
   if (!recetteData) return (
-    <div className={`my-[30px] min-h-screen flex justify-center pt-32 transition-colors duration-300 ${
+    <div className={`my-[30px] flex justify-center ${
       isDarkMode ? "bg-[#111827] text-[#FFFFFF]" : "bg-[#f5f8fc] text-[#333333]"}`}>
       Recette introuvable
     </div>
@@ -233,84 +241,79 @@ export default function RecettePage({ params }: PageProps) {
 
   const displayAverage = recetteData.note ? Number(recetteData.note).toFixed(1) : "0";
 
+  {/*Espace --- Affichage de la recette*/}
   return (
     <div className="my-[30px] min-h-screen">
-      <main className={`flex-1 text-left mx-[10%] my-10 flex flex-col pb-[60px] rounded-[20px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mt-32 transition-colors duration-300 ${
-        isDarkMode ? "bg-[#1F2937] text-[#FFFFFF]" : "bg-[#FFFCEE] text-[#333333]"}`}> 
-               
-        <h1 className="text-[22px] font-bold mt-8 pt-8 mb-8 text-center">{recetteData.nom}</h1>
+      {/*min-h-screen permet à ce que la page soit adaptative*/}
+   
+      {/*Espace --- Bloc principal*/}
+      <main className={`mx-[10%] flex flex-col rounded-[20px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] ${
+        //mx-[10%] : marge horizontale de 10%
+        //flex flex-col : disposition en colonne
+        isDarkMode ? "bg-[#1F2937] text-[#FFFFFF]" : "bg-[#FFFCEE] text-[#333333]"}`}>         
+        
+        {/*Espace --- Première section : Image & infos*/}
+        <div className="flex flex-col items-center text-center">
+          <h1 className="font-bold">{recetteData.nom}</h1>
+         
+          {/* Image */}
+          <div className={`h-[140px] w-[300px] ${
+            isDarkMode ? "bg-[#4B5563]" : "bg-[#FFFFFF]"
+            }`}>
+            {recetteData.images ? (
+              <img 
+                src={recetteData.images} 
+                alt={recetteData.nom}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className={`w-full h-full bg-gradient-to-br flex items-center justify-center ${
+                isDarkMode 
+                  ? "from-[#4B5563] to-[#374151]" 
+                  : "from-[#FFFFFF] to-[#EEEEEE]"
+                }`}>
+                  <span className={`italic ${
+                    isDarkMode ? "text-[#9CA3AF]" : "text-[#6B7280]"
+                    }`}>Pas d'image</span>
+              </div>
+            )}
+          </div> 
 
-        <div className="flex flex-col lg:flex-row gap-8 px-8">
-          <div className="lg:w-1/3 flex flex-col items-center">
-            
-            {/* Image */}
-            <div className="w-full max-w-[300px] rounded-lg shadow-md overflow-hidden mb-6">
-              {recetteData.images ? (
-                <img 
-                  src={recetteData.images} 
-                  alt={recetteData.nom} 
-                  className="w-full h-64 object-cover" 
-                />
-              ) : (
-                <div className={`w-full h-full flex items-center justify-center transition-colors duration-300 ${
-                  isDarkMode 
-                    ? "bg-gradient-to-br from-[#374151] to-[#4B5563]" 
-                    : "bg-gradient-to-br from-[#FFFFFF] to-[#EEEEEE]"}`}>
-                  
-                  <span className={`italic ${isDarkMode ? "text-[#D1D5DB]" : "text-[#6B7280]"}`}>Pas d'image</span>
-                </div>
-              )}
-            </div> 
 
-            {/* Temps de préparation */}
-            <div className={`mt-4 p-4 rounded-lg shadow-sm w-full max-w-[300px] transition-colors duration-300 ${
-              isDarkMode ? "bg-[#374151]" : "bg-[#FFFFFF]"}`}>
-            
-              <p className={`text-lg font-semibold text-center ${
-                isDarkMode ? "text-[#E5E7EB]" : "text-[#1F2937]"}`}>
-                ⏱️ Préparation : <span className={isDarkMode ? "text-[#f4a887]" : "text-[#f4a887]"}>{recetteData.temps_preparation} min</span>
-              </p>
-            </div>
-
-            {/* Informations supplémentaires */}
+            {/* Espace --- Informations supplémentaires */}
             {(recetteData.categorie || recetteData.fete || recetteData.origine) && (
-              <div className={`mt-4 p-4 rounded-lg shadow-sm w-full max-w-[300px] transition-colors duration-300 ${
-                isDarkMode ? "bg-[#374151]" : "bg-[#FFFFFF]"}`}>
+              <div className={` w-full max-w-[300px] ${
+                isDarkMode ? "bg-[#374151]" : "bg-[#FFFFFF]"}`}>           
                 
-                <h3 className={`text-lg font-semibold text-center mb-2 ${
-                  isDarkMode ? "text-[#E5E7EB]" : "text-[#1F2937]"
-                }`}>Informations</h3>
-  
-                <div className={`p-4 rounded-lg shadow-sm w-full max-w-[300px] transition-colors duration-300 ${
-                  isDarkMode ? "bg-[#4B5563]" : "bg-[#F9FAFB]"}`}>
-                  <p className={`text-lg font-semibold text-center ${
-                    isDarkMode ? "text-[#E5E7EB]" : "text-[#1F2937]"}`}>
-                    Note moyenne : <span className={`font-bold text-2xl ${
-                      isDarkMode ? "text-[#f4a887]" : "text-[#f4a887]"
-                    }`}>{displayAverage}</span>/5
+                <h3>Informations</h3>
+                <div className={`w-full max-w-[300px]`}>
+
+                  <p> {/* Description --- Temps de préparation */}  
+                    ⏱️ Préparation : <span>{recetteData.temps_preparation} min</span>
                   </p>
-                </div>
-
-                {recetteData.categorie && (
-                  <p className={`text-sm mb-1 text-center ${
-                    isDarkMode ? "text-[#D1D5DB]" : "text-[#374151]"}`}>
-                      <span className="font-medium">Catégorie:</span> {recetteData.categorie}
-                 </p>
-                )}
-
-                {recetteData.fete && (
-                  <p className={`text-sm mb-1 text-center ${
-                    isDarkMode ? "text-[#D1D5DB]" : "text-[#374151]"}`}>
-                      <span className="font-medium">Fête:</span> {recetteData.fete}
+                  
+                  <p> {/* Description --- Note moyenne */}
+                    Note moyenne : <span>{displayAverage}</span>/5
                   </p>
-                )}
 
-                {recetteData.origine && (
-                  <p className={`text-sm text-center ${
-                    isDarkMode ? "text-[#D1D5DB]" : "text-[#374151]"}`}>
+                  {recetteData.categorie && ( //Description --- Catégorie
+                    <p>
+                      <span>Catégorie:</span> {recetteData.categorie}
+                    </p>
+                  )}
+
+                  {recetteData.fete && ( //Description --- Fête
+                    <p>
+                      <span>Fête:</span> {recetteData.fete}
+                    </p>
+                  )}
+
+                  {recetteData.origine && ( //Description --- Origine
+                    <p>
                       <span className="font-medium">Origine:</span> {recetteData.origine}
-                  </p>
-                )}
+                    </p>
+                  )}
+                </div>             
               </div>         
             )}            
           </div>
@@ -319,103 +322,98 @@ export default function RecettePage({ params }: PageProps) {
           <div className=" my-[10px] mx-[10px] text-right">
             <button
               onClick={handleToggleSave}
-              className={`px-[1.2rem] py-[0.7rem] border-none rounded-[3px] text-base cursor-pointer bg-[#f4a887] hover:bg-[#e8976f] transition-colors`}
+              className={`px-[1.2rem] py-[0.7rem] border-none rounded-[3px] bg-[#f4a887] hover:bg-transparent`}
             >
               {isSaved ? "Recette enregistrée ★" : "Enregistrer la recette ☆"}
             </button>
           </div>
 
-          <div className={`p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px] transition-colors duration-300 ${
+
+
+          {/*Espace --- Deuxième section : Ingrédients, Préparation, Notation, Commentaires*/}
+          <div className={`rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px] my-[10px] ${
             isDarkMode ? "bg-[#4B5563]" : "bg-[#FFFFFF]"
           }`}>            
             
-            {/* Ingrédients */}
-            <section className={`p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px] transition-colors duration-300 ${
-              isDarkMode ? "bg-[#1F2937]" : "bg-[#FFFCEE]"
+            {/* Description --- Ingrédients */}
+            <section className={`rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px] my-[10px] ${
+              isDarkMode ? "bg-[#1F2937] text-[#E5E7EB]" : "bg-[#FFFCEE] text-[#1F2937]"
             }`}>              
-              <h2 className={`${isDarkMode ? "text-[#E5E7EB]" : "text-[#1F2937]"} text-xl font-semibold mb-4`}>🛒 Ingrédients</h2>
-              <div className={`leading-relaxed whitespace-pre-line ${
-                isDarkMode ? "text-[#D1D5DB]" : "text-[#374151]"
-              }`}>{recetteData.ingredient}</div>            
+              <h2>🛒 Ingrédients</h2>
+              {recetteData.ingredient}            
             </section>
 
-            {/* Préparation */}
-            <section className={`p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px] transition-colors duration-300 ${
-              isDarkMode ? "bg-[#1F2937]" : "bg-[#FFFCEE]"
+            {/* Description --- Préparation */}
+            <section className={`rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px] ${
+              isDarkMode ? "bg-[#1F2937] text-[#E5E7EB]" : "bg-[#FFFCEE] text-[#1F2937]"
             }`}>
-              <h2 className={`${isDarkMode ? "text-[#E5E7EB]" : "text-[#1F2937]"} text-xl font-semibold mb-4`}>👨‍🍳 Préparation</h2>
-              <div className={`leading-relaxed whitespace-pre-line ${
-                isDarkMode ? "text-[#D1D5DB]" : "text-[#374151]"
-              }`}>{recetteData.preparation}</div>
+              <h2>👨‍🍳 Préparation</h2>
+              <div className={`whitespace-pre-line`}>
+                {recetteData.preparation}</div>
             </section>
 
-            {/* Bloc Notation */}
-            <section className={`p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px] transition-colors duration-300 ${
-              isDarkMode ? "bg-[#1F2937]" : "bg-[#FFFCEE]"
+            {/* Description --- Notation */}
+            <section className={`rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px] ${
+              isDarkMode ? "bg-[#1F2937] text-[#E5E7EB]" : "bg-[#FFFCEE] text-[#1F2937]"
             }`}>
-              <h2 className={`${isDarkMode ? "text-[#E5E7EB]" : "text-[#1F2937]"} text-xl font-semibold mb-4`}>🗒️ Notez cette recette</h2>
-              <div className="flex space-x-1 mb-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    onClick={() => handleRating(star)}
-                    disabled={isSubmitting}
-                    className={`text-2xl ${star <= userRating ? "text-[#F59E0B]" : isDarkMode ? "text-[#6B7280]" : "text-[#D1D5DB]"} transition-colors`}
-                  >
-                    ★
-                  </button>
-                ))}
-              </div>
-
-              <p className={`text-sm ${
-                isDarkMode ? "text-[#9CA3AF]" : "text-[#6B7280]"
-              }`}>
+              <h2>🗒️ Notez cette recette</h2>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => handleRating(star)}
+                  disabled={isSubmitting}
+                  className={`text-2xl ${star <= userRating}`}
+                >
+                  ★
+                </button>
+              ))}
+             
+              {/* Description --- Affichage de la note utilisateur */}
+              <p>
                 {userRating > 0 ? `Votre note : ${userRating}` : "Vous avez essayé la recette ? Donnez une note !"}
               </p>
             </section>
 
-            {/* Commentaires */}
-            <section className={`p-6 rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px] transition-colors duration-300 ${
-              isDarkMode ? "bg-[#1F2937]" : "bg-[#FFFCEE]"
+            {/* Description --- Commentaires */}
+            <section className={`rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.04)] mx-[10px] my-[10px] ${
+              isDarkMode ? "bg-[#1F2937] text-[#E5E7EB]" : "bg-[#FFFCEE] text-[#1F2937]"
             }`}>
-              <h2 className={`${isDarkMode ? "text-[#E5E7EB]" : "text-[#1F2937]"} text-xl font-semibold mb-4`}>
-                💬 Commentaires ({comments.length})
-              </h2>
-              
-              {/* Formulaire d'ajout de commentaire */}
+              <h2>💬 Commentaires ({comments.length})</h2>
+              {/* Description --- Ajout de commentaire */}
               {user && (
-                <div className="mb-6">
+                <div>
                   <textarea 
                     value={newComment} 
                     onChange={(e) => setNewComment(e.target.value)} 
                     placeholder="Partagez votre avis sur cette recette..."
-                    className={`w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#f4a887] ${
+                    className={`w-[99%] resize-none ${
                       isDarkMode 
-                        ? "bg-[#374151] border-[#4B5563] text-[#000000] placeholder-[#9CA3AF]" 
-                        : "bg-[#FFFFFF] border-[#D1D5DB] text-[#111827] placeholder-[#6B7280]"
+                        ? "bg-[#374151] border-[#4B5563] text-[#000000]" 
+                        : "bg-[#FFFFFF] border-[#D1D5DB] text-[#111827]"
                     }`}
                     rows={3}
                   />
-                  <div className="flex justify-end mt-2">
-                    <button 
-                      onClick={handleAddComment} 
-                      disabled={isSubmitting || !newComment.trim()} 
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        isSubmitting || !newComment.trim()
-                          ? "bg-[#9CA3AF] cursor-not-allowed"
-                          : "bg-[#f4a887] hover:bg-[#e8976f] text-[#000000]"
-                      }`}
-                    >
-                      {isSubmitting ? "Publication..." : "Publier le commentaire"}
-                    </button>
-                  </div>
-                </div>
+                  
+                  {/* Espace --- Bouton publier commentaire */}
+                  <button 
+                    onClick={handleAddComment} 
+                    disabled={isSubmitting || !newComment.trim()} 
+                    className={`px-[1.2rem] py-[0.7rem] border-none rounded-[3px] bg-[#f4a887] hover:bg-transparent
+                    ${
+                      isSubmitting || !newComment.trim()
+                        ? "bg-[#9CA3AF] cursor-not-allowed"
+                        : "bg-[#f4a887] hover:bg-[#e8976f] text-[#000000]"
+                    }`}
+                  >
+                    {isSubmitting ? "Publication..." : "Publier le commentaire"}
+                  </button>
+                </div>  
               )}
 
-              {/* Liste des commentaires */}
-              <div className="space-y-4">
+              {/* Espace --- Liste de commentaires publiés */}
+              <div>
                 {comments.length > 0 ? comments.map((comment) => (
-                  <div key={comment.id} className={`p-4 rounded-lg transition-colors duration-300 ${
+                  <div key={comment.id} className={`resize-none my-[10px] mx-[10px] ${
                     isDarkMode ? "bg-[#374151] border-[#4B5563]" : "bg-[#FFFFFF] border-[#E5E7EB]"
                   } border`}>
                     <div className="flex justify-between items-start mb-2">
@@ -423,24 +421,26 @@ export default function RecettePage({ params }: PageProps) {
                         <p className={`font-semibold ${
                           isDarkMode ? "text-[#E5E7EB]" : "text-[#1F2937]"
                         }`}>
-                          {comment.profiles?.prenom || "Anonyme"} {comment.profiles?.nom}
+                          Profil : <span className="italic">{comment.profiles?.prenom || "Anonyme"} {comment.profiles?.nom}</span>
                         </p>
-                        <p className={`text-sm ${
+                        <p className={`${
                           isDarkMode ? "text-[#9CA3AF]" : "text-[#6B7280]"
                         }`}>
-                          {new Date(comment.created_at).toLocaleDateString('fr-FR', {
+                          Heure de publication : <span className="italic">{new Date(comment.created_at).toLocaleDateString('fr-FR', {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric',
                             hour: '2-digit',
                             minute: '2-digit'
-                          })}
+                          })}</span>
                         </p>
                       </div>
                       {user && user.id === comment.proprietaire_id && (
                         <button 
                           onClick={() => handleDeleteComment(comment.id)} 
-                          className={`text-sm px-3 py-1 rounded transition-colors ${
+                          className={`px-[1.2rem] py-[0.7rem] bg-[#ff6b6b] border-none rounded-[3px] hover:bg-[#ff5252]
+
+                            ${
                             isDarkMode 
                               ? "text-[#F87171] hover:bg-[#4B5563]" 
                               : "text-[#EF4444] hover:bg-[#F3F4F6]"
@@ -450,30 +450,32 @@ export default function RecettePage({ params }: PageProps) {
                         </button>
                       )}
                     </div>
-                    <p className={`mt-2 leading-relaxed ${
+                    <p className={` ${
                       isDarkMode ? "text-[#D1D5DB]" : "text-[#374151]"
                     }`}>
                       {comment.contenu}
                     </p>
                   </div>
                 )) : (
-                  <div className={`text-center py-8 rounded-lg ${
-                    isDarkMode ? "bg-[#374151] text-[#9CA3AF]" : "bg-gray-50 text-[#6B7280]"
+                  <div className={` ${
+                    isDarkMode ? "bg-[#374151] text-[#9CA3AF]" : "text-[#6B7280]"
                   }`}>
                     <p className="italic">Soyez le premier à commenter cette recette !</p>
                   </div>
                 )}
               </div>
               
-              {/* Message de connexion */}
+              {/* Espace --- Message de connexion */}
               {!user && (
-                <div className="text-center mt-6 pt-4 border-t border-border-[#E5E7EB] dark:border-[#4B5563]">
-                  <p className={`mb-2 ${isDarkMode ? "text-[#9CA3AF]" : "text-[#4B5563]"}`}>
+                <div>
+                  <p className={`${isDarkMode ? "text-[#9CA3AF]" : "text-[#4B5563]"}`}>
                     Connectez-vous pour ajouter un commentaire
                   </p>
                   <button 
                     onClick={() => router.push("/connexion")} 
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    className={`px-[1.2rem] py-[0.7rem] border-none rounded-[3px] bg-[#f4a887] hover:bg-transparent my-[10px]
+                    ${
+
                       isDarkMode 
                         ? "bg-[#f4a887] hover:bg-[#e8976f] text-[#000000]" 
                         : "bg-[#f4a887] hover:bg-[#e8976f] text-[#000000]"
@@ -485,8 +487,7 @@ export default function RecettePage({ params }: PageProps) {
               )}            
             </section>
           </div>
+          </main>
         </div>
-      </main>
-    </div>
   );
 }

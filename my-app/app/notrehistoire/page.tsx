@@ -5,7 +5,7 @@ export default function Notrehistoire() {
   const [selectedTheme, setSelectedTheme] = useState("clair");
 
   // Charger et appliquer le thème au chargement
-  useEffect(() => {
+    useEffect(() => {
     const savedTheme = localStorage.getItem('selectedTheme') || "clair";
     setSelectedTheme(savedTheme);
   }, []);
@@ -34,7 +34,7 @@ export default function Notrehistoire() {
       }`}>
         
         {/* Titre avec les mêmes styles que .titre */}
-        <h2 className="text-[22px] font-bold mt-8 pt-8 mb-0">Cooking, notre histoire :</h2>
+        <h2>Cooking, notre histoire :</h2>
         
         {/* Paragraphes avec marges */}
         <p className={`mx-[30px] my-4 text-justify ${
@@ -52,12 +52,12 @@ export default function Notrehistoire() {
         {/* Image avec hauteur maximale */}
         <img 
           src="/notrehistoire.jpg" 
-          className="my-[30px] max-h-[200px] my-4"
+          className="my-[30px] max-h-[200px]"
           alt="René, la grand-mère du fondateur de Cooking.com"
         />
         
         {/* Légende avec les mêmes styles que .subtitle */}
-        <p className={`py-5 w-4/5 text-center leading-relaxed text-lg mb-4 italic ${
+        <p className={`py-5 w-4/5 text-center leading-relaxed italic ${
           selectedTheme === "sombre" ? "text-[#D1D5DB]" : "text-[#555555]"
         }`}>
           René, la grand mère du fondateur de Cooking.com

@@ -71,12 +71,12 @@ function ArticlesContent() {
   const { data, error } = await query;
 
         if (error) {
-          console.error("❌ Erreur de récupération des recettes :", error.message);
+          console.error("Erreur de récupération des recettes :", error.message);
           setError(error.message);
           return;
         }
 
-        console.log("📊 Recettes trouvées:", data?.length);
+        console.log("Recettes trouvées:", data?.length);
         setRecettes(data || []);
       } catch (err) {
         console.error("Erreur:", err);
@@ -113,10 +113,9 @@ function ArticlesContent() {
   const hasActiveFilter = search || categorie || fete || origine;
 
   if (isLoading) return (
-    <div className={`my-[30px] min-h-screen flex justify-center pt-32 transition-colors duration-300 ${
+    <div className={`my-[30px] min-h-screen flex justify-center ${
       isDarkMode ? "bg-[#111827] text-[#FFFFFF]" : "bg-[#f5f8fc] text-[#333333]"}`}>
       <div className="flex flex-col items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f4a887] mb-4"></div>
         <p>Chargement des recettes...</p>
       </div>
     </div>
@@ -124,7 +123,7 @@ function ArticlesContent() {
 
   if (error) {
     return (
-      <div className={`my-[30px] min-h-screen flex justify-center pt-32 transition-colors duration-300 ${
+      <div className={`my-[30px] min-h-screen flex justify-center shadow-[0_6px_20px_rgba(0,0,0,0.08)] ${
         isDarkMode ? "bg-[#111827] text-[#FFFFFF]" : "bg-[#f5f8fc] text-[#333333]"}`}>
         <div className="text-center">
           <p className="text-lg mb-4">Erreur lors du chargement des recettes 😢</p>
@@ -142,46 +141,41 @@ function ArticlesContent() {
 
   return (
     <main
-      className="flex-1 text-left mx-[10%] my-10 my-[30px] bg-[#FFFCEE] flex flex-col items-center text-center pb-20 rounded-[20px] mt-32 overflow-hidden box-border"
+      className="mx-[10%] my-[30px] bg-[#FFFCEE] flex flex-col items-center rounded-[20px] shadow-[0_6px_20px_rgba(0,0,0,0.08)]"
     >  
       {/* Titre selon le filtre actif */}
-      <h1 className="text-[22px] font-bold mt-12 pt-8 mb-8">
-        {getPageTitle()}
-      </h1>
+      <h1>{getPageTitle()}</h1>
 
       {/* Message si aucun résultat avec filtre actif */}
       {hasActiveFilter && recettesWithImages.length === 0 && (
-        <div className="mb-8">
-          <p className="text-[#555] text-lg mb-4">
-            Aucune recette trouvée pour ce filtre
-          </p>
-          <Link 
-            href="/articles" 
-            className="px-4 py-2 bg-[#f4a887] text-[#333] rounded-[5px] hover:bg-[#FFFCEE] transition-colors inline-block"
-          >
-            Voir toutes les recettes
-          </Link>
-        </div>
+        <>
+          <p className="italic">Aucune recette trouvée pour ce filtre</p>
+          <div className="my-[20px]">
+            <Link 
+              href="/articles" 
+              className={`px-[1.2rem] py-[0.7rem] border-none rounded-[3px] bg-[#f4a887] hover:bg-transparent my-[10px] mx-[10px]`}
+            >
+              Voir toutes les recettes
+            </Link>
+          </div>
+        </>
       )}
 
       {/* Message si aucune recette du tout (sans filtre) */}
       {!hasActiveFilter && recettesWithImages.length === 0 && (
-        <div className="mb-8">
-          <p className="text-[#555] text-lg">
-            Aucune recette disponible pour le moment.
-          </p>
+        <div>
+          <p>Aucune recette disponible pour le moment.</p>
         </div>
       )}
 
       {/* Informations sur les résultats */}
       {recettesWithImages.length > 0 && (
-        <div className="mb-6">
-          <p className="text-[#555] text-lg">
+        <div>
+          <p>
             {recettesWithImages.length} recette(s) trouvée(s)
             {hasActiveFilter && (
               <Link 
                 href="/articles" 
-                className="ml-4 text-[#f4a887] hover:underline text-sm"
               >
                 Voir toutes les recettes
               </Link>
@@ -191,26 +185,26 @@ function ArticlesContent() {
       )}
 
         {/* Grille des recettes */}
-        <div className="my-12 mx-auto grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-8 items-start w-[calc(100%-80px)] max-w-[1100px] box-border justify-items-center">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] w-[calc(100%-80px)] max-w-[1100px]">
           {recettesWithImages.length > 0 ? (
             recettesWithImages.map((recette) => (
               <div 
                 key={recette.id} 
-                className={`my-[10px] rounded-[5px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] w-[250px] overflow-hidden text-left my-4 transition-colors duration-300 ${
+                className={`my-[10px] rounded-[5px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] w-[250px] text-left ${
                   isDarkMode 
                     ? "bg-[#374151] shadow-[0_1px_3px_rgba(0,0,0,0.3)]" 
                     : "bg-[#FFFCEE]"
                 }`}
               >
                 {/* Image de la recette */}
-                <div className={`h-[140px] transition-colors duration-300 ${
+                <div className={`h-[140px] ${
                   isDarkMode ? "bg-[#4B5563]" : "bg-[#FFFFFF]"
                 }`}>
                   {recette.images ? (
                     <img 
                       src={recette.images} 
                       alt={recette.nom}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full"
                       onError={(e) => {
                         // Fallback si l'image ne charge pas
                         const target = e.target as HTMLImageElement;
@@ -219,7 +213,7 @@ function ArticlesContent() {
                       }}
                     />
                   ) : null}
-                  <div className={`w-full h-full bg-gradient-to-br flex items-center justify-center transition-colors duration-300 ${
+                    <div className={`w-full h-full bg-gradient-to-br flex items-center justify-center ${
                     isDarkMode 
                       ? "from-[#4B5563] to-[#374151]" 
                       : "from-[#FFFFFF] to-[#EEEEEE]"
@@ -230,19 +224,15 @@ function ArticlesContent() {
                   </div>
                 </div>
 
-              {/* Contenu de la carte */}
-              <div className="p-5 bg-[#FFFCEE]">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">{recette.nom}</h3>
-                <p className="text-[13px] text-[#555] mb-3">
-                  Temps de préparation : {recette.temps_preparation} min
-                </p>
-                <p className="text-[13px] text-[#555] mb-3">
-                  Difficulté : {recette.difficulte}
-                </p>
+              {/* Espace --- Contenu de la carte rectte */}
+              <div>
+                <h3>{recette.nom}</h3>
+                <p>Temps de préparation : {recette.temps_preparation} min</p>
+                <p>Difficulté : {recette.difficulte}</p>
 
                   <Link 
                     href={`/articles/${recette.id}`} 
-                    className="inline-block text-[13px] text-[#f4a887] hover:text-[#FB923C] no-underline hover:underline transition-colors duration-200"
+                    className="text-[#f4a887] hover:text-[#FB923C] no-underline hover:underline"
                   >
                     Voir la recette →
                   </Link>

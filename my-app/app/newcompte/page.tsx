@@ -28,7 +28,7 @@ export default function CreerCompte() {
         data: {
           prenom,
           nom,
-          civilite, // Ajout de la civilité dans les données utilisateur
+          civilite, 
         }
       }
     });

@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-// Types
+// données utilisateur
 interface UserData {
   civility: string;
   firstName: string;
@@ -14,7 +14,7 @@ interface UserData {
   password: string;
 }
 
-
+// données recette
 interface Recipe {
   id: string;
   nom: string;
@@ -25,18 +25,18 @@ interface Recipe {
   difficulte: string;
   ingredient: string;
   preparation: string;
-  // URL stored in the DB (may be null if no image)
-  images?: string | null;
-  // Local file selected in the editor (optional, not persisted directly to DB)
-  image?: File | null;
+  images?: string | null; //peut être null
+  image?: File | null; //pour l'upload
 }
 
+// données sauvegardées pour recette sauvegardée
 interface SavedRecipe {
   id: string;
   created_at: string;
   recette: Recipe;
 }
 
+// données commentaire
 interface Comment {
   id: string;
   contenu: string;
@@ -50,6 +50,7 @@ interface Comment {
 const AccountSettings = () => {
   const supabase = createClient();
 
+  // États pour les données utilisateur
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
@@ -93,11 +94,11 @@ const AccountSettings = () => {
   });
 
   // Classe boutons
-  const primaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base cursor-pointer hover:bg-[#e8976f] transition-colors";
-  const secondaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#6c757d] border-none rounded-[3px] text-base cursor-pointer hover:opacity-90 transition-colors";
-  const dangerBtn = "px-[1.2rem] py-[0.7rem] bg-[#ff6b6b] border-none rounded-[3px] text-base cursor-pointer hover:opacity-90 transition-colors";
+  const primaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#f4a887] border-none rounded-[3px] text-base hover:bg-[#e8976f] transition-colors";
+  const secondaryBtn = "px-[1.2rem] py-[0.7rem] bg-[#6c757d] border-none rounded-[3px] text-base hover:opacity-90 transition-colors";
+  const dangerBtn = "px-[1.2rem] py-[0.7rem] bg-[#ff6b6b] border-none rounded-[3px] text-base hover:opacity-90 transition-colors";
 
-  // FONCTION POUR RÉINITIALISER LES PARAMÈTRES PAR DÉFAUT
+  // Fonction pour réinitialiser les paramètres aux valeurs par défaut
   const resetSettingsToDefault = useCallback(() => {
     console.log("Réinitialisation des paramètres aux valeurs par défaut");
     
@@ -126,10 +127,11 @@ const AccountSettings = () => {
     }
   }, []);
 
-  // FONCTION POUR SAUVEGARDER LES PARAMÈTRES DANS LA BDD
+  // Fonction pour sauvegarder les paramètres de l'user dans la bdd
   const saveSettingsToDatabase = useCallback(async () => {
     if (!userId) return;
 
+    // Sauvegarde dans la table user_settings
     try {
       const settings = {
         theme: selectedTheme,
@@ -156,7 +158,7 @@ const AccountSettings = () => {
     }
   }, [userId, selectedTheme, selectedFont, selectedBanner, selectedExport, supabase]);
 
-  // FONCTION POUR CHARGER LES PARAMÈTRES DEPUIS LA BDD
+  // Fonction pour charger les paramètres depuis la bdd
   const loadSettingsFromDatabase = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -170,10 +172,10 @@ const AccountSettings = () => {
         return;
       }
 
+      // Applique les paramètres obtenus
       if (data && data.settings) {
         const settings = data.settings;
         
-        // Mettre à jour les états avec les paramètres de l'utilisateur
         if (settings.theme) {
           setSelectedTheme(settings.theme);
         }
@@ -194,7 +196,7 @@ const AccountSettings = () => {
     }
   }, []);
 
-  // FONCTION POUR CHARGER LES RECETTES ENREGISTRÉES
+  // Fonction pour charger les recettes sauvegardées
   const loadSavedRecipes = useCallback(async (userId: string) => {
     try {
       const { data: savedRecipesData, error: savedRecipesError } = await supabase
@@ -234,7 +236,7 @@ const AccountSettings = () => {
     }
   }, []);
 
-  // FONCTION POUR CHARGER LES COMMENTAIRES
+  // Fonction pour charger les commentaires écrits par l'user
 const loadUserComments = useCallback(async (userId: string) => {
   try {
     console.log("Chargement des commentaires écrits PAR l'utilisateur:", userId);
@@ -280,7 +282,7 @@ const loadUserComments = useCallback(async (userId: string) => {
 }, [supabase]);
 
 
-  // FONCTION POUR UPLOADER L'IMAGE
+  // Fonction pour uploader l'image de la recette
   const uploadRecipeImage = useCallback(async (file: File) => {
     if (!userId) return null;
 
@@ -304,11 +306,11 @@ const loadUserComments = useCallback(async (userId: string) => {
     }
   }, [userId, supabase]);
 
-  // FONCTION POUR CONVERTIR LES DONNÉES EN CSV
+  // Fonction utilitaire pour convertir les données en CSV
   const convertToCSV = useCallback((data: any) => {
     const sections = [];
     
-    // Section Informations personnelles
+    // Section --- Informations personnelles
     sections.push("INFORMATIONS PERSONNELLES");
     sections.push("Clé,Valeur");
     Object.entries(data.informations_personnelles).forEach(([key, value]) => {
@@ -316,7 +318,7 @@ const loadUserComments = useCallback(async (userId: string) => {
     });
     sections.push(""); // Ligne vide entre les sections
 
-    // Section Commentaires
+    // Section --- Commentaires
     if (data.commentaires.length > 0) {
       sections.push("COMMENTAIRES");
       sections.push("ID,Contenu,Date de création,Recette associée");
@@ -326,7 +328,7 @@ const loadUserComments = useCallback(async (userId: string) => {
       sections.push("");
     }
 
-    // Section Recettes publiées
+    // Section --- Recettes publiées
     if (data.recettes_publiées.length > 0) {
       sections.push("RECETTES PUBLIÉES");
       sections.push("ID,Nom,Temps de préparation,Catégorie,Fête,Origine,Difficulté,Ingrédients,Préparation");
@@ -336,7 +338,7 @@ const loadUserComments = useCallback(async (userId: string) => {
       sections.push("");
     }
 
-    // Section Recettes enregistrées
+    // Section --- Recettes enregistrées
     if (data.recettes_enregistrées.length > 0) {
       sections.push("RECETTES ENREGISTRÉES");
       sections.push("ID sauvegarde,Date de sauvegarde,ID recette,Nom recette,Temps de préparation,Catégorie,Fête,Origine,Difficulté");
@@ -348,7 +350,7 @@ const loadUserComments = useCallback(async (userId: string) => {
     return sections.join("\n");
   }, []);
 
-  // FONCTION POUR EXPORTER LES DONNÉES
+  // Fonction pour exporter les données user
   const handleExportData = useCallback(async () => {
     if (!userId) {
       alert("Vous devez être connecté pour exporter vos données");
@@ -429,6 +431,7 @@ const loadUserComments = useCallback(async (userId: string) => {
         `)
         .eq("user_id", userId);
 
+      // Ajouter les recettes enregistrées au format approprié
       if (!savedRecipesError && savedRecipesData) {
         exportData.recettes_enregistrées = savedRecipesData.map((saved: any) => {
           const recetteObj = Array.isArray(saved.recette) ? saved.recette[0] : saved.recette;
@@ -503,7 +506,7 @@ const loadUserComments = useCallback(async (userId: string) => {
     }
   }, [supabase]);
 
-  // AJOUTER UNE RECETTE
+  // Ajouter une nouvelle recette
   const handleAddRecipe = useCallback(async () => {
     if (!userId) return;
 
@@ -557,7 +560,7 @@ const loadUserComments = useCallback(async (userId: string) => {
     }
   }, [userId, newRecipe, uploadRecipeImage, supabase, fetchUserRecipes]);
 
-  // MODIFIER UNE RECETTE
+  // Modifier une recette existante
   const handleEditRecipe = useCallback(async () => {
     if (!editingRecipe) return;
 
@@ -596,7 +599,7 @@ const loadUserComments = useCallback(async (userId: string) => {
     }
   }, [editingRecipe, uploadRecipeImage, supabase, userId, fetchUserRecipes]);
 
-  // SUPPRIMER UNE RECETTE
+  // Supprimer une recette
   const handleDeleteRecipe = useCallback(async (recipeId: string) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette recette ?")) return;
 
@@ -617,7 +620,7 @@ const loadUserComments = useCallback(async (userId: string) => {
     }
   }, [supabase, userId, fetchUserRecipes]);
 
-  // SUPPRIMER UN COMMENTAIRE
+  // Supprimer un commentaire
   const handleDeleteComment = useCallback(async (commentId: string) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer ce commentaire ?")) return;
 
@@ -742,7 +745,7 @@ const loadUserComments = useCallback(async (userId: string) => {
     fetchUserData();
   }, [supabase, resetSettingsToDefault, loadSettingsFromDatabase, fetchUserRecipes, loadSavedRecipes, loadUserComments]);
 
-  // SAUVEGARDE AUTOMATIQUE DANS LA BDD QUAND L'UTILISATEUR EST CONNECTÉ
+  // Sauvegarde automatique des paramètres dans la base de données
   useEffect(() => {
     if (userId) {
       const timeoutId = setTimeout(() => {
@@ -840,34 +843,36 @@ const loadUserComments = useCallback(async (userId: string) => {
     );
   }
 
+  {/* Bloc principal */}
   return (
     <div className="my-[30px] mx-[10%]">
-      {/* Container en deux colonnes alignées */}
       <div className="max-w-[1400px] mx-auto grid grid-cols-[minmax(320px,380px)_1fr] gap-8 items-start min-h-[calc(100vh-160px)]">
         
-        {/* Colonne de gauche - paramètres */}
-        <aside className="sticky top-24">
-          <div className={`p-6 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px] transition-colors duration-300 ${
+        {/* Espace --- Colonne de gauche : paramètres */}
+        <aside className="sticky">
+          <div className={`rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] transition-colors duration-300 ${
             selectedTheme === "sombre" ? "bg-[#1F2937]" : "bg-[#FFFCEE]"}`}>
             
-            <h2 className="text-3xl font-bold m-0 mx-[10px] my-[10px] pb-10">Paramètres</h2>
+            <div className="mx-[10px] my-[15px] p-[15px]">
+              {/*le p-[15px] permet de séparer le contenu du bord du conteneur*/}
+              <h2>Paramètres</h2>
 
-            <div className="space-y-6 mx-[10px]">
-              {/* Personnalisation */}
+              {/* Espace --- Personnalisation */}
               <div>
-                <h3 className="text-lg font-semibold mb-3">Personnalisation</h3>
+                <h3>Personnalisation</h3>
 
                 <div className="space-y-4">
-                  {/* Thème */}
+                  {/* Espace --- Thème : on peut sélectionner mode sombre ou clair */}
                   <div>
                     <h4 className="text-base font-medium mb-2">Thème du site</h4>
                     <div className="flex flex-col gap-2">
-                      <label className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
+                      {/*si etat clair est sélectionné*/}
+                      <label className="flex items-center mx-[5px]">
                         <input
                           type="radio"
                           name="theme"
                           value="clair"
-                          checked={selectedTheme === "clair"}
+                          checked={selectedTheme === "clair"} 
                           onChange={(e) => handleThemeChange(e.target.value)}
                           className="hidden"
                         />
@@ -878,8 +883,9 @@ const loadUserComments = useCallback(async (userId: string) => {
                         </span>
                         Clair
                       </label>
-
-                      <label className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
+                      
+                      {/*si etat sombre est sélectionné*/}
+                      <label className="flex items-center mx-[5px]">
                         <input
                           type="radio"
                           name="theme"
@@ -898,12 +904,12 @@ const loadUserComments = useCallback(async (userId: string) => {
                     </div>
                   </div>
 
-                  {/* Police */}
+                  {/* Espace --- Police : aptos, century ou impact */}
                   <div>
-                    <h4 className="text-base font-medium mb-2">Police préférée</h4>
-                    <div className="flex flex-col gap-2">
+                    <h4>Police préférée</h4>
+                    <div className="flex flex-col">
                       {["Aptos", "Century", "Impact"].map((font) => (
-                        <label key={font} className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
+                        <label key={font} className="flex items-center mx-[5px]">
                           <input
                             type="radio"
                             name="font"
@@ -923,12 +929,12 @@ const loadUserComments = useCallback(async (userId: string) => {
                     </div>
                   </div>
 
-                  {/* Bannière */}
+                  {/* Espace --- Bannière : pâtisserie, plat ou international */}
                   <div>
-                    <h4 className="text-base font-medium mb-2">Modifier la bannière</h4>
-                    <div className="flex flex-col gap-2">
+                    <h4 className="text-base font-medium">Modifier la bannière</h4>
+                    <div className="flex flex-col">
                       {["Pâtisserie", "Plat", "International"].map((banner) => (
-                        <label key={banner} className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
+                        <label key={banner} className="flex items-center mx-[5px]">
                           <input
                             type="radio"
                             name="banner"
@@ -950,15 +956,17 @@ const loadUserComments = useCallback(async (userId: string) => {
                 </div>
               </div>
 
-              {/* Données et confidentialité */}
+              {/* Espace --- Données et confidentialité */}
               <div>
-                <h3 className="text-lg font-semibold mb-3">Données et confidentialité</h3>
+                <h3>Données et confidentialité</h3>
 
                 <div className="space-y-3">
                   <div>
-                    <h4 className="text-base font-medium mb-2 mx-[10px] my-[10px]">Télécharger mes données</h4>
-                    <div className="flex flex-col gap-2 mb-3">
-                      <label className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
+                    <h4>Télécharger mes données</h4>
+
+                    {/* Espace --- Télécharger les données JSON ou CSV */}
+                    <div className="flex flex-col">
+                      <label className="flex items-center mx-[5px]">
                         <input
                           type="radio"
                           name="export"
@@ -975,7 +983,7 @@ const loadUserComments = useCallback(async (userId: string) => {
                         Exporter en JSON
                       </label>
 
-                      <label className="flex items-center gap-3 cursor-pointer py-1 mx-[5px]">
+                      <label className="flex items-center mx-[5px]">
                         <input
                           type="radio"
                           name="export"
@@ -1003,23 +1011,26 @@ const loadUserComments = useCallback(async (userId: string) => {
           </div>
         </aside>
 
-        {/* Colonne de droite - informations du compte */}
-        <main className={`p-8 rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px] transition-colors duration-300 ${
+        {/* Espace --- Colonne de droite : informations du compte */}
+        <main className={`rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.08)] mx-[10px] my-[10px] ${
           selectedTheme === "sombre" ? "bg-[#1F2937] text-white" : "bg-[#FFFCEE]"}`}>          
-          <div className="flex justify-between items-start gap-4 mb-8 border-b-2 border-[#f4a887] pb-6 mx-[10px]">
-            <h1 className="m-0 text-3xl">Les informations du compte</h1>
-            <div className="my-[15px] flex items-start gap-2">
+          <div className="flex justify-between items-start border-[#f4a887] mx-[10px]">
+            
+            <h1>Les informations du compte</h1>
+            <div className="my-[15px] flex items-start">
+              
+              {/*Espace --- Bouton modifier / sauvegarder / annuler */}
               {!isEditing ? (
                 <button className={primaryBtn} onClick={() => setIsEditing(true)}>
-                  ✏️ Modifier
+                  Modifier
                 </button>
               ) : (
-                <div className="flex gap-2">
+                <div className="flex">
                   <button className={primaryBtn} onClick={handleSaveProfile}>
-                    💾 Sauvegarder
+                    Sauvegarder
                   </button>
                   <button className={secondaryBtn} onClick={handleCancelEdit}>
-                    ❌ Annuler
+                    Annuler
                   </button>
                 </div>
               )}
@@ -1027,16 +1038,16 @@ const loadUserComments = useCallback(async (userId: string) => {
           </div>
 
           {userData && (
-            <div className=" space-y-6 mx-[10px]">
-              {/* Civilité */}
-              <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre civilité</h3>
+            <div className="mx-[10px]">
+              {/* Description --- Civilité */}
+              <div className="flex items-start">
+                <h3 className="font-semibold w-[180px]">Votre civilité</h3>
                 {isEditing ? (
-                  <div className="flex flex-wrap gap-3 flex-1">
+                  <div className="flex flex-wrap">
                     {["Monsieur", "Madame", "Ne pas renseigner"].map((civility) => (
                       <label
                         key={civility}
-                        className="flex items-center gap-3 cursor-pointer px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] mx-[5px] my-[5px]"
+                        className="flex items-center border-[#e2e8f0] rounded-[6px] mx-[5px] my-[5px]"
                       >
                         <input
                           type="radio"
@@ -1060,85 +1071,85 @@ const loadUserComments = useCallback(async (userId: string) => {
                 )}
               </div>
 
-              {/* Prénom */}
-              <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre prénom</h3>
+              {/* Description --- Prénom */}
+              <div className="flex items-start">
+                <h3 className="font-semibold w-[180px]">Votre prénom</h3>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedData.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="border-[#e2e8f0] rounded-[6px] max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                   />
                 ) : (
-                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.firstName}</div>
+                  <div className="italic mx-[10px] my-[20px]">{userData.firstName}</div>
                 )}
               </div>
 
-              {/* Nom */}
-              <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre nom</h3>
+              {/* Description --- Nom */}
+              <div className="flex items-start">
+                <h3 className="font-semibold w-[180px]">Votre nom</h3>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedData.lastName}
                     onChange={(e) => handleInputChange("lastName", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="border-[#e2e8f0] rounded-[6px] max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                   />
                 ) : (
-                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.lastName}</div>
+                  <div className="italic mx-[10px] my-[20px]">{userData.lastName}</div>
                 )}
               </div>
 
-              {/* Email */}
-              <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre mail</h3>
+              {/* Description --- Email */}
+              <div className="flex items-start">
+                <h3 className="font-semibold w-[180px]">Votre mail</h3>
                 {isEditing ? (
                   <input
                     type="email"
                     value={editedData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="border-[#e2e8f0] rounded-[6px] max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                   />
                 ) : (
-                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.email}</div>
+                  <div className="italic mx-[10px] my-[20px]">{userData.email}</div>
                 )}
               </div>
 
-              {/* Mot de passe */}
-              <div className="flex items-start gap-6 py-2">
-                <h3 className="text-base font-semibold w-[180px] m-0 pt-2">Votre mot de passe</h3>
+              {/* Description --- Mot de passe */}
+              <div className="flex items-start">
+                <h3 className="font-semibold w-[180px]">Votre mot de passe</h3>
                 {isEditing ? (
                   <input
                     type="password"
                     value={editedData.password === "••••••••" ? "" : editedData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
-                    className="px-4 py-3 border-2 border-[#e2e8f0] rounded-[6px] text-base flex-1 max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
+                    className="border-[#e2e8f0] rounded-[6px] max-w-[420px] focus:border-[#f4a887] focus:outline-none mx-[10px]"
                     placeholder="Nouveau mot de passe"
                   />
                 ) : (
-                  <div className="italic py-3 text-base flex-1 mx-[10px] my-[20px]">{userData.password}</div>
+                  <div className="italic mx-[10px] my-[20px]">{userData.password}</div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Ligne de séparation */}
+          {/* Description --- Ligne de séparation */}
           <div className="h-px bg-[#ddd] my-10 mx-[10px]"></div>
 
-          {/* Commentaires */}
-          <section className="mb-10 mx-[10px]">
-            <h2 className="text-2xl font-semibold mb-6">Vos commentaires ({comments.length})</h2>
+          {/* Espace --- Commentaires */}
+          <section className="mx-[10px]">
+            <h2>Vos commentaires ({comments.length})</h2>
             {comments.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1">
                 {comments.map((comment) => (
                   <div 
                     key={comment.id} 
-                    className={`p-5 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-colors duration-300 ${
-                      selectedTheme === "sombre" ? "bg-[#374151] border border-[#4B5563]" : "bg-white border border-[#E5E7EB]"
+                    className={`rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] ${
+                      selectedTheme === "sombre" ? "bg-[#374151] border border-[#4B5563]" : "border border-[#E5E7EB]"
                     }`}
                   >
-                    <p className={`mb-3 leading-relaxed ${
+                    <p className={`leading-relaxed ${
                       selectedTheme === "sombre" ? "text-[#E5E7EB]" : "text-[#1F2937]"
                     }`}>
                       {comment.contenu}
@@ -1159,7 +1170,7 @@ const loadUserComments = useCallback(async (userId: string) => {
 </div>
                       {comment.recette && (
   <Link 
-    href={`/articles/${comment.recette.id}`}  // Ici comment.recette.id est maintenant un number
+    href={`/articles/${comment.recette.id}`} 
     className={`text-sm font-medium transition-colors ${
       selectedTheme === "sombre" 
         ? "text-[#f4a887] hover:text-[#e8976f]" 
@@ -1171,10 +1182,10 @@ const loadUserComments = useCallback(async (userId: string) => {
 )}
                     </div>
                     {/* Bouton pour supprimer le commentaire depuis le compte */}
-                    <div className="flex justify-end mt-3">
+                    <div className="flex justify-end">
                       <button
                         onClick={() => handleDeleteComment(comment.id)}
-                        className={`px-3 py-1 text-sm rounded transition-colors ${
+                        className={`text-sm rounded transition-colors ${
                           selectedTheme === "sombre"
                             ? "text-[#F87171] hover:bg-[#F87171] hover:text-white"
                             : "text-[#EF4444] hover:bg-[#EF4444] hover:text-white"
@@ -1187,19 +1198,19 @@ const loadUserComments = useCallback(async (userId: string) => {
                 ))}
               </div>
             ) : (
-              <div className={`text-center py-12 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px] transition-colors duration-300 ${
+              <div className={`text-center rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px] ${
                 selectedTheme === "sombre" ? "bg-[#374151] text-[#9CA3AF]" : "bg-[#F9FAFB] text-[#6B7280]"
               }`}>
-                <p className="text-lg">Vous n'avez pas encore publié de commentaires</p>
-                <p className="mt-2">Vos commentaires apparaîtront ici après avoir partagé votre avis sur des recettes.</p>
+                <p>Vous n'avez pas encore publié de commentaires</p>
+                <p>Vos commentaires apparaîtront ici après avoir partagé votre avis sur des recettes.</p>
               </div>
             )}
           </section>
 
-          {/* Recettes publiées */}
-          <section className="mb-10 mx-[10px]">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold">Vos recettes publiées</h2>
+          {/* Section --- Recettes publiées */}
+          <section className="mx-[10px]">
+            <div className="flex justify-between items-center">
+              <h2>Vos recettes publiées</h2>
               <button 
                 className={primaryBtn} 
                 onClick={() => setShowAddRecipeForm(true)}
@@ -1208,30 +1219,30 @@ const loadUserComments = useCallback(async (userId: string) => {
               </button>
             </div>
 
-            {/* Formulaire d'ajout de recette */}
+            {/* Espace --- Formulaire d'ajout de recette */}
             {showAddRecipeForm && (
-              <div className={`p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6 transition-colors duration-300 ${
+              <div className={`rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] ${
                 selectedTheme === "sombre" ? "bg-[#374151]" : "bg-white"}`}>
-                <h3 className="text-xl font-semibold mb-4">Nouvelle recette</h3>
+                <h3>Nouvelle recette</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
                     type="text"
                     placeholder="Nom de la recette"
                     value={newRecipe.nom}
                     onChange={(e) => setNewRecipe({...newRecipe, nom: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                   />
                   <input
                     type="text"
                     placeholder="Temps de préparation (min)"
                     value={newRecipe.temps_preparation}
                     onChange={(e) => setNewRecipe({...newRecipe, temps_preparation: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                   />
                   <select
                     value={newRecipe.categorie}
                     onChange={(e) => setNewRecipe({...newRecipe, categorie: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                   >
                     <option value="">Catégorie</option>
                     <option value="apéro">Apéro</option>
@@ -1268,16 +1279,17 @@ const loadUserComments = useCallback(async (userId: string) => {
                     onChange={(e) => setNewRecipe({...newRecipe, origine: e.target.value})}
                     className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                   >
+                    {/*fix : bien faire attention a ce que ca corresponde a ce qu'on a dans la bdd*/}
                     <option value="">Origine</option>
-                    <option value="Français">Français</option>
-                    <option value="Japonais">Japonais</option>
-                    <option value="Italien">Italien</option>
-                    <option value="Indien">Indien</option>
+                    <option value="française">Français</option>
+                    <option value="japonaise">Japonais</option>
+                    <option value="italienne">Italien</option>
+                    <option value="indienne">Indien</option>
                   </select>
 
                   {/* Champ pour l'image */}
                   <div className="md:col-span-2">
-                    <label className="block text-base font-medium mb-2">
+                    <label className="block text-base font-medium">
                       Image de la recette
                     </label>
                     <input
@@ -1287,10 +1299,10 @@ const loadUserComments = useCallback(async (userId: string) => {
                         ...newRecipe, 
                         image: e.target.files?.[0] || null
                       })}
-                      className="w-full px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                      className="w-full border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                     />
                     {newRecipe.image && (
-                      <p className="text-sm mt-2">
+                      <p>
                         Image sélectionnée : {newRecipe.image.name}
                       </p>
                     )}
@@ -1300,14 +1312,14 @@ const loadUserComments = useCallback(async (userId: string) => {
                     placeholder="Ingrédients"
                     value={newRecipe.ingredient}
                     onChange={(e) => setNewRecipe({...newRecipe, ingredient: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
                     rows={3}
                   />
                   <textarea
                     placeholder="Préparation"
                     value={newRecipe.preparation}
                     onChange={(e) => setNewRecipe({...newRecipe, preparation: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
                     rows={3}
                   />
                 </div>
@@ -1337,10 +1349,10 @@ const loadUserComments = useCallback(async (userId: string) => {
 
             {/* Formulaire de modification de recette */}
             {editingRecipe && (
-              <div className={`p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6 transition-colors duration-300 ${
+              <div className={`rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mb-6 transition-colors duration-300 ${
                 selectedTheme === "sombre" ? "bg-[#374151]" : "bg-white"}`}>                
                 
-                <h3 className="text-xl font-semibold mb-4">Modifier la recette</h3>
+                <h3>Modifier la recette</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
                     type="text"
@@ -1354,12 +1366,12 @@ const loadUserComments = useCallback(async (userId: string) => {
                     placeholder="Temps de préparation (min)"
                     value={editingRecipe.temps_preparation}
                     onChange={(e) => setEditingRecipe({...editingRecipe, temps_preparation: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                   />
                   <select
                     value={editingRecipe.categorie}
                     onChange={(e) => setEditingRecipe({...editingRecipe, categorie: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                   >
                     <option value="">Catégorie</option>
                     <option value="apéro">Apéro</option>
@@ -1370,7 +1382,7 @@ const loadUserComments = useCallback(async (userId: string) => {
                   <select
                     value={editingRecipe.difficulte}
                     onChange={(e) => setEditingRecipe({...editingRecipe, difficulte: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                   >
                     <option value="faible">Facile</option>
                     <option value="modéré">Moyen</option>
@@ -1381,7 +1393,7 @@ const loadUserComments = useCallback(async (userId: string) => {
                   <select
                     value={editingRecipe.fete}
                     onChange={(e) => setEditingRecipe({...editingRecipe, fete: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                   >
                     <option value="">Fête associée</option>
                     <option value="Nouvel an">Nouvel an</option>
@@ -1394,13 +1406,13 @@ const loadUserComments = useCallback(async (userId: string) => {
                   <select
                     value={editingRecipe.origine}
                     onChange={(e) => setEditingRecipe({...editingRecipe, origine: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none"
                   >
                     <option value="">Origine</option>
-                    <option value="Français">Français</option>
-                    <option value="Japonais">Japonais</option>
-                    <option value="Italien">Italien</option>
-                    <option value="Indien">Indien</option>
+                    <option value="française">Français</option>
+                    <option value="japonaise">Japonais</option>
+                    <option value="italienne">Italien</option>
+                    <option value="indienne">Indien</option>
                   </select>
 
                   {/* Champ pour l'image */}
@@ -1436,14 +1448,14 @@ const loadUserComments = useCallback(async (userId: string) => {
                     placeholder="Ingrédients"
                     value={editingRecipe.ingredient}
                     onChange={(e) => setEditingRecipe({...editingRecipe, ingredient: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
                     rows={3}
                   />
                   <textarea
                     placeholder="Préparation"
                     value={editingRecipe.preparation}
                     onChange={(e) => setEditingRecipe({...editingRecipe, preparation: e.target.value})}
-                    className="px-4 py-2 border-2 border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
+                    className="border-[#e2e8f0] rounded-[6px] focus:border-[#f4a887] focus:outline-none md:col-span-2"
                     rows={3}
                   />
                 </div>
@@ -1478,11 +1490,11 @@ const loadUserComments = useCallback(async (userId: string) => {
                       )}
                     </div>
                     
-                    <h3 className="text-lg font-semibold mb-3">{recipe.nom}</h3>
-                    <p className="text-[13px] mb-3">
+                    <h3>{recipe.nom}</h3>
+                    <p>
                       Temps : {recipe.temps_preparation} min
                     </p>
-                    <p className="text-[13px] mb-3">
+                    <p>
                       Difficulté : {recipe.difficulte}
                     </p>
                   
@@ -1506,14 +1518,14 @@ const loadUserComments = useCallback(async (userId: string) => {
               </div>
             ) : (
               <div className="text-center py-12 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
-                <p className="text-lg">Aucune recette publiée</p>
+                <p>Aucune recette publiée</p>
               </div>
             )}
           </section>
 
           {/* Recettes enregistrées */}
           <section className="mb-10 mx-[10px]">
-            <h2 className="text-2xl font-semibold mb-6">Vos recettes enregistrées</h2>
+            <h2>Vos recettes enregistrées</h2>
             
             <div className="my-12 mx-auto grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-8 items-start w-[calc(100%-80px)] max-w-[1100px] box-border justify-items-center">
             {savedRecipes.length > 0 ? (
@@ -1536,14 +1548,14 @@ const loadUserComments = useCallback(async (userId: string) => {
                       )}
                     </div>
                     
-                    <h3 className="text-lg font-semibold mb-3">{savedRecipe.recette.nom}</h3>
-                    <p className="text-[13px] mb-3">
+                    <h3>{savedRecipe.recette.nom}</h3>
+                    <p>
                       Temps : {savedRecipe.recette.temps_preparation} min
                     </p>
-                    <p className="text-[13px] mb-3">
+                    <p>
                       Difficulté : {savedRecipe.recette.difficulte}
                     </p>
-                    <p className="text-[13px] text-[#6B7280]">
+                    <p>
                       Enregistrée le : {new Date(savedRecipe.created_at).toLocaleDateString('fr-FR')}
                     </p>
                     
@@ -1558,7 +1570,7 @@ const loadUserComments = useCallback(async (userId: string) => {
               </div>
             ) : (
               <div className="text-center py-12 rounded-[10px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mx-[10px]">
-                <p className="text-lg">Aucune recette enregistrée</p>
+                <p>Aucune recette enregistrée</p>
               </div>
             )}
             </div>
@@ -1567,13 +1579,13 @@ const loadUserComments = useCallback(async (userId: string) => {
 
           {/* Supprimer le compte */}
           <section className="mb-8 mx-[10px] my-[10px]">
-            <h2 className="text-2xl font-semibold mb-6">Supprimer mon compte</h2>
+            <h2>Supprimer mon compte</h2>
 
               <div className={`p-6 rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] mx-[5px] my-[5px] transition-colors duration-300 ${
                 selectedTheme === "sombre" ? "bg-[#374151] text-white" : "bg-white"}`}>              
-              <h3 className="text-lg font-medium mb-4">Supprimer ?</h3>
+              <h3>Supprimer ?</h3>
               <div className="flex gap-5 mb-5">
-                <label className="flex items-center gap-2 cursor-pointer py-1 mx-[5px]">
+                <label className="flex items-center mx-[5px]">
                   <input
                     type="radio"
                     name="delete"
@@ -1588,7 +1600,7 @@ const loadUserComments = useCallback(async (userId: string) => {
                   </span>
                   Oui
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer py-1 mx-[5px]">
+                <label className="flex items-center mx-[5px]">
                   <input
                     type="radio"
                     name="delete"
@@ -1605,8 +1617,8 @@ const loadUserComments = useCallback(async (userId: string) => {
                 </label>
               </div>
 
-              <h3 className="text-lg font-medium mb-2">Êtes-vous sûr ?</h3>
-              <p className="mb-4 mx-[5px]">
+              <h3>Êtes-vous sûr ?</h3>
+              <p>
                 Réécrire la phrase suivante : <br />
                 <em className="italic">Je veux supprimer mon compte</em>
               </p>
