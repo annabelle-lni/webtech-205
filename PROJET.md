@@ -3,7 +3,7 @@
 - **Membres de l'équipe :**
   - Charbonnier Pierre-Louis
   - Leoni Annabelle
-- **URL du déploiement :** [https://votre-projet.vercel.app]
+- **URL du déploiement :** [(https://cooking-com.vercel.app/)]
 
 ---
 
